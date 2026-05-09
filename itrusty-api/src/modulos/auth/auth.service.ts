@@ -16,8 +16,7 @@ export async function cadastrarUsuario(data: CadastroDTO) {
       name: data.name,
       email: email,
       phone: data.phone,
-      passwordHash,
-      role: data.role,
+      passwordHash
     },
   })
 
@@ -46,27 +45,26 @@ export async function loginUsuario(data: LoginDTO) {
     role: existe.role
   } as UsuarioResponseDTO
 }
-export async function loginOuCadastrarSocial(supabaseToken: string, role: Role) {
-    // 1. Valida o token com o Supabase
+ export async function loginOuCadastrarSocial(supabaseToken: string) {
     const { data: { user: sbUser }, error } = await supabase.auth.getUser(supabaseToken)
     if (error || !sbUser?.email) throw new Error('TOKEN_INVALIDO')
 
-  const provider = sbUser.app_metadata?.provider ?? 'oauth'
-
-    // 2. Busca ou cria o usuário no seu banco
-  const email = sbUser.email.toLowerCase().trim()
-  let user = await prisma.user.findUnique({ where: { email } })
+    const provider = sbUser.app_metadata?.provider ?? 'oauth'
+    const email = sbUser.email.toLowerCase().trim()
+    let user = await prisma.user.findUnique({ where: { email } })
+    const isNewUser = !user
 
     if (!user) {
-  const rawName = sbUser.user_metadata?.full_name ?? sbUser.email.split('@')[0]
-  const name = rawName.trim().slice(0, 100)
+      const rawName = sbUser.user_metadata?.full_name ?? email.split('@')[0]
+      const name = rawName.trim().slice(0, 100)
       user = await prisma.user.create({
-        data: { name, email: email, role, provider },
+       data: { name, email, provider } 
       })
     }
 
-    return { id: user.id, name: user.name, email: user.email, role: user.role }
+    return { id: user.id, name: user.name, email: user.email, role: user.role, isNewUser }
   }
+
 
 
 

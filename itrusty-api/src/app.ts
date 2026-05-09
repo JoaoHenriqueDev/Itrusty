@@ -4,6 +4,8 @@
   import fastifyHelmet = require('@fastify/helmet')
   import fastifyRateLimit = require('@fastify/rate-limit')
   import { authRotas } from './modulos/auth/auth.rotas'
+import { motoristaRotas } from './modulos/usuario/motorista.rotas'
+  import { oficinaRotas } from './modulos/oficina/oficina.rotas'
 
 const app = Fastify({ logger: true })
 
@@ -19,6 +21,8 @@ app.register(fastifyJwt, { secret: process.env.JWT_SECRET! })
   app.register(fastifyHelmet)
 
 app.register(authRotas, { prefix: '/auth' })
+app.register(motoristaRotas, { prefix: '/motorista' })
+app.register(oficinaRotas,   { prefix: '/oficina' })
 
 app.get('/health', async () => ({ status: 'ok' }))
 
