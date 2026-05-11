@@ -50,6 +50,7 @@ export default function ContaOficina() {
   const [cidade,      setCidade]      = useState('')
   const [estado,      setEstado]      = useState('')
   const [grupos,      setGrupos]      = useState<GrupoDia[]>(GRUPOS_INICIAIS)
+  const [capacidade,  setCapacidade]  = useState(1)
   const [loading,     setLoading]     = useState(true)
   const [salvando,    setSalvando]    = useState(false)
   const [uploadando,  setUploadando]  = useState(false)
@@ -70,6 +71,7 @@ export default function ContaOficina() {
         setBairro(res.bairro ?? '')
         setCidade(res.cidade ?? '')
         setEstado(res.estado ?? '')
+        setCapacidade(res.capacidade ?? 1)
         if (res.horarios?.length > 0) {
           setGrupos(prev =>
             prev.map(g => {
@@ -183,14 +185,15 @@ export default function ContaOficina() {
         }))
       )
       await api.patch('/oficina/perfil', {
-        nome:     nome.trim()     || undefined,
-        telefone: telefone.trim() || undefined,
-        cep:      cep.replace(/\D/g, '') || undefined,
-        rua:      rua.trim()      || undefined,
-        numero:   numero.trim()   || undefined,
-        bairro:   bairro.trim()   || undefined,
-        cidade:   cidade.trim()   || undefined,
-        estado:   estado.trim()   || undefined,
+        nome:       nome.trim()     || undefined,
+        telefone:   telefone.trim() || undefined,
+        cep:        cep.replace(/\D/g, '') || undefined,
+        rua:        rua.trim()      || undefined,
+        numero:     numero.trim()   || undefined,
+        bairro:     bairro.trim()   || undefined,
+        cidade:     cidade.trim()   || undefined,
+        estado:     estado.trim()   || undefined,
+        capacidade: Math.max(1, Math.min(20, capacidade)),
         horarios,
       })
       invalidarCacheOficina()
@@ -339,6 +342,32 @@ export default function ContaOficina() {
           />
         </View>
 
+        {/* Capacidade */}
+        <Text style={s.secaoLabel}>CAPACIDADE SIMULTÂNEA</Text>
+        <View style={s.capacidadeCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.capacidadeLabel}>Carros ao mesmo tempo</Text>
+            <Text style={s.capacidadeDesc}>Quantos veículos sua oficina atende em paralelo</Text>
+          </View>
+          <View style={s.stepperRow}>
+            <TouchableOpacity
+              style={[s.stepperBtn, capacidade <= 1 && s.stepperBtnDisabled]}
+              onPress={() => setCapacidade(v => Math.max(1, v - 1))}
+              disabled={capacidade <= 1}
+            >
+              <Ionicons name="remove" size={18} color={capacidade <= 1 ? Colors.textMuted : Colors.primary} />
+            </TouchableOpacity>
+            <Text style={s.stepperValor}>{capacidade}</Text>
+            <TouchableOpacity
+              style={[s.stepperBtn, capacidade >= 20 && s.stepperBtnDisabled]}
+              onPress={() => setCapacidade(v => Math.min(20, v + 1))}
+              disabled={capacidade >= 20}
+            >
+              <Ionicons name="add" size={18} color={capacidade >= 20 ? Colors.textMuted : Colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Horários */}
         {grupos.map((g, idx) => (
           <View key={g.label} style={s.grupoCard}>
@@ -415,6 +444,13 @@ const s = StyleSheet.create({
   horarioLabel: { fontSize: Typography.size.sm, color: Colors.textSecondary, marginBottom: Spacing.xs },
   horarioInput: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radii.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.background },
   horarioTexto: { fontSize: Typography.size.md, color: Colors.text },
+  capacidadeCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: Radii.md, borderWidth: 1, borderColor: Colors.border, padding: Spacing.base, marginBottom: Spacing.base },
+  capacidadeLabel:   { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold, color: Colors.primary },
+  capacidadeDesc:    { fontSize: Typography.size.xs, color: Colors.textMuted, marginTop: 2 },
+  stepperRow:        { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  stepperBtn:        { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
+  stepperBtnDisabled:{ borderColor: Colors.borderLight, backgroundColor: Colors.background },
+  stepperValor:      { fontSize: Typography.size.xl, fontWeight: Typography.weight.extrabold, color: Colors.primary, minWidth: 28, textAlign: 'center' },
   erro:         { fontSize: Typography.size.sm, color: Colors.error, marginTop: Spacing.sm, textAlign: 'center' },
   rodape:       { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.background },
   voltarBtn:    { flex: 1, borderWidth: 1, borderColor: Colors.border, borderRadius: Radii.full, paddingVertical: Spacing.md, alignItems: 'center', justifyContent: 'center' },
