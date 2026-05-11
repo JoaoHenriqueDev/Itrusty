@@ -140,7 +140,7 @@ export default function Login() {
           />
         </View>
 
-        <TouchableOpacity style={s.esqueci} hitSlop={8}>
+        <TouchableOpacity style={s.esqueci} hitSlop={8} onPress={() => router.push('/(auth)/esqueci-senha')}>
           <Text style={s.esqueciTexto}>Esqueci a minha senha</Text>
         </TouchableOpacity>
 

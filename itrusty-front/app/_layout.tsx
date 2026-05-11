@@ -20,13 +20,14 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!navigationState?.key || loading) return
 
-    const inAuth       = segments[0] === '(auth)'
-    const inOnboarding = segments[0] === '(onboarding)'
-    const inMotorista  = segments[0] === '(motorista)'
-    const inOficina    = segments[0] === '(oficina)'
+    const inAuth          = segments[0] === '(auth)'
+    const inOnboarding    = segments[0] === '(onboarding)'
+    const inMotorista     = segments[0] === '(motorista)'
+    const inOficina       = segments[0] === '(oficina)'
+    const inPublicRoute   = segments[0] === 'reset-senha' || segments[0] === 'verificar-email'
 
     if (!token) {
-      if (!inAuth) router.replace('/(auth)/login')
+      if (!inAuth && !inPublicRoute) router.replace('/(auth)/login')
       return
     }
 
