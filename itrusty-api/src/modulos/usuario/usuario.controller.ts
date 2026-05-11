@@ -3,10 +3,24 @@ import { extrairUserId } from '../../compartilhado/middlewares/extrairUserId'
 import {
   buscarPerfilUsuario,
   atualizarPerfilUsuario,
+  atualizarPushToken,
   adicionarVeiculo,
   removerVeiculo,
 } from './usuario.service'
 import { AtualizarUsuarioDTO, AdicionarVeiculoDTO } from './motorista.dto'
+
+export async function patchPushToken(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { token } = req.body as { token: string }
+    if (!token?.startsWith('ExponentPushToken')) {
+      return reply.status(400).send({ error: 'Token inválido' })
+    }
+    await atualizarPushToken(extrairUserId(req), token)
+    return reply.send({ ok: true })
+  } catch {
+    return reply.status(500).send({ error: 'Erro interno' })
+  }
+}
 
 export async function getPerfil(req: FastifyRequest, reply: FastifyReply) {
   try {

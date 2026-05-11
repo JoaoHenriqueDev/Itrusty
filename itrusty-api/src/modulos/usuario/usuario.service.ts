@@ -1,6 +1,10 @@
 import { prisma } from '../../compartilhado/prisma'
 import { AtualizarUsuarioDTO } from './motorista.dto'
 
+export async function atualizarPushToken(userId: string, token: string) {
+  await prisma.user.update({ where: { id: userId }, data: { fcmToken: token } })
+}
+
 export async function buscarPerfilUsuario(userId: string) {
   const user = await prisma.user.findUnique({
     where:  { id: userId },

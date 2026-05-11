@@ -44,7 +44,15 @@
       "expo-router",
       "expo-web-browser",
       "expo-secure-store",
-      "expo-location"
+      "expo-location",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#F97316",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "extra": {
       "router": {},

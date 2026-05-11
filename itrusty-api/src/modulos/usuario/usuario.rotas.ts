@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { autenticar }  from '../../compartilhado/middlewares/autenticar'
 import { autorizar }   from '../../compartilhado/middlewares/autorizar'
-import { getPerfil, patchPerfil, postVeiculo, deleteVeiculo } from './usuario.controller'
+import { getPerfil, patchPerfil, patchPushToken, postVeiculo, deleteVeiculo } from './usuario.controller'
 
 export async function usuarioRotas(app: FastifyInstance) {
   // Editar perfil pessoal — qualquer usuário autenticado
@@ -21,6 +21,21 @@ export async function usuarioRotas(app: FastifyInstance) {
       },
     },
   }, patchPerfil)
+
+  // Push token — qualquer usuário autenticado
+  app.patch('/push-token', {
+    preHandler: [autenticar],
+    schema: {
+      body: {
+        additionalProperties: false,
+        type: 'object',
+        required: ['token'],
+        properties: {
+          token: { type: 'string', minLength: 20, maxLength: 200 },
+        },
+      },
+    },
+  }, patchPushToken)
 
   // Veículos — apenas motorista
   app.post('/veiculos', {

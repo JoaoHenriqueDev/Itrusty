@@ -2,12 +2,20 @@ import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-route
 import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import SplashScreen from '../components/SplashScreen'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 function RootLayoutNav() {
   const { token, user, loading } = useAuth()
   const router = useRouter()
   const segments = useSegments()
   const navigationState = useRootNavigationState()
+
+  // Registra push e navega para agendamentos ao tocar na notificação
+  usePushNotifications(() => {
+    if (!user?.role) return
+    if (user.role === 'MOTORISTA') router.push('/(motorista)/agendamentos')
+    if (user.role === 'OFICINA')   router.push('/(oficina)/agenda' as any)
+  })
 
   useEffect(() => {
     if (!navigationState?.key || loading) return
