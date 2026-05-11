@@ -46,23 +46,52 @@ enum CategoriaServico {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  phone        String?
-  passwordHash String?  @map("password_hash")
-  role         Role?
-  fcmToken     String?  @map("fcm_token")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  provider     String?
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
+  phone         String?
+  passwordHash  String?  @map("password_hash")
+  role          Role?
+  fcmToken      String?  @map("fcm_token")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  provider      String?
 
-  motorista     Motorista?
-  oficina       Oficina?
-  refreshTokens RefreshToken[]
-  notificacoes  Notificacao[]
+  motorista               Motorista?
+  oficina                 Oficina?
+  refreshTokens           RefreshToken[]
+  notificacoes            Notificacao[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 model Notificacao {
@@ -218,7 +247,8 @@ model Agendamento {
   criadoEm     DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
-  @@index([oficinaId, dataServico])
-  @@index([motoristaId])
+  @@index([oficinaId, status])
+  @@index([oficinaId, dataServico, status])
+  @@index([motoristaId, dataServico])
   @@map("agendamentos")
 }

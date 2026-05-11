@@ -3,6 +3,7 @@ import { cadastrarUsuario, loginUsuario, loginOuCadastrarSocial } from './auth.s
 import { CadastroDTO, LoginDTO, SocialLoginDTO } from './auth.dto'
 import { gerarTokens } from '../../compartilhado/tokens'
 import { prisma } from '../../compartilhado/prisma'
+import { extrairUserId } from '../../compartilhado/middlewares/extrairUserId'
 
 export async function cadastrar(req: FastifyRequest<{ Body: CadastroDTO }>, reply: FastifyReply) {
   try {
@@ -40,7 +41,10 @@ export async function login(req: FastifyRequest<{ Body: LoginDTO }>, reply: Fast
   }
 }
 
-export async function loginSocial(req: FastifyRequest<{ Body: SocialLoginDTO }>, reply: FastifyReply) {
+export async function loginSocial(
+  req: FastifyRequest<{ Body: SocialLoginDTO }>,
+  reply: FastifyReply
+) {
   try {
     const result = await loginOuCadastrarSocial(req.body.supabaseToken)
     const tokens = await gerarTokens(req.server, result.id, result.role ?? null)
@@ -58,7 +62,10 @@ export async function loginSocial(req: FastifyRequest<{ Body: SocialLoginDTO }>,
   }
 }
 
-export async function refresh(req: FastifyRequest<{ Body: { refreshToken: string } }>, reply: FastifyReply) {
+export async function refresh(
+  req: FastifyRequest<{ Body: { refreshToken: string } }>,
+  reply: FastifyReply
+) {
   try {
     const { refreshToken } = req.body
 
@@ -78,6 +85,22 @@ export async function refresh(req: FastifyRequest<{ Body: { refreshToken: string
 
     const tokens = await gerarTokens(req.server, stored.user.id, stored.user.role ?? null)
     return reply.send(tokens)
+  } catch {
+    return reply.status(500).send({ error: 'Erro interno' })
+  }
+}
+
+export async function logout(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { refreshToken } = req.body as { refreshToken: string }
+    const userId = extrairUserId(req)
+
+    await prisma.refreshToken.updateMany({
+      where: { token: refreshToken, userId },
+      data: { revokedAt: new Date() },
+    })
+
+    return reply.send({ ok: true })
   } catch {
     return reply.status(500).send({ error: 'Erro interno' })
   }

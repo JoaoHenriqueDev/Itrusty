@@ -44,7 +44,7 @@ export default function EditarPerfilOficina() {
         phone: phone.trim() || undefined,
       })
       updateUser({ id: res.user.id, name: res.user.name, role: user?.role ?? null })
-      Alert.alert('Salvo!', 'Seus dados foram atualizados.', [{ text: 'Ok', onPress: () => router.back() }])
+      Alert.alert('Salvo!', 'Seus dados foram atualizados.', [{ text: 'Ok', onPress: () => router.navigate('/(oficina)/perfil' as any) }])
     } catch (err: any) {
       Alert.alert('Erro', err.message ?? 'Não foi possível salvar.')
     } finally {
@@ -60,7 +60,7 @@ export default function EditarPerfilOficina() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[s.container, { paddingTop: insets.top }]}>
         <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+          <TouchableOpacity onPress={() => router.navigate('/(oficina)/perfil' as any)} hitSlop={12}>
             <Ionicons name="arrow-back" size={22} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={s.headerTitulo}>Editar perfil</Text>
@@ -102,7 +102,7 @@ export default function EditarPerfilOficina() {
         </ScrollView>
 
         <View style={[s.rodape, { paddingBottom: Math.max(insets.bottom, Spacing.base) }]}>
-          <TouchableOpacity style={s.voltarBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={s.voltarBtn} onPress={() => router.navigate('/(oficina)/perfil' as any)}>
             <Text style={s.voltarTexto}>Cancelar</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[s.salvarBtn, salvando && { opacity: 0.6 }]} onPress={salvar} disabled={salvando}>

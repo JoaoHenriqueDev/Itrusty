@@ -48,7 +48,7 @@ export default function DetalheAgendamento() {
   useEffect(() => {
     api.get<Detalhe>(`/oficina/agendamentos/${id}`)
       .then(setAg)
-      .catch(() => router.back())
+      .catch(() => router.navigate('/(oficina)/' as any))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -64,7 +64,7 @@ export default function DetalheAgendamento() {
     setAcao(true)
     try {
       await api.patch(`/oficina/agendamentos/${id}/recusar`, {})
-      router.back()
+      router.navigate('/(oficina)/' as any)
     } catch {} finally { setAcao(false) }
   }
 
@@ -72,7 +72,7 @@ export default function DetalheAgendamento() {
     setAcao(true)
     try {
       await api.patch(`/oficina/agendamentos/${id}/finalizar`, {})
-      router.back()
+      router.navigate('/(oficina)/' as any)
     } catch {} finally { setAcao(false) }
   }
 
@@ -92,7 +92,7 @@ export default function DetalheAgendamento() {
       <View style={s.header}>
         <TouchableOpacity
           style={s.iconBtn}
-          onPress={() => router.back()}
+          onPress={() => router.navigate('/(oficina)/' as any)}
           accessibilityLabel="Voltar"
           accessibilityRole="button"
         >

@@ -3,6 +3,7 @@ import {
   onboardingMotorista,
   buscarOficinas,
   criarAgendamento,
+  cancelarAgendamento,
   buscarDetalheOficina,
   listarAgendamentosMotorista,
   buscarVeiculosMotorista,
@@ -10,7 +11,6 @@ import {
 import { OnboardingMotoristaDTO, CriarAgendamentoDTO } from './motorista.dto'
 import { gerarTokens } from '../../compartilhado/tokens'
 import { extrairUserId } from '../../compartilhado/middlewares/extrairUserId'
-
 
 export async function onboarding(req: FastifyRequest, reply: FastifyReply) {
   try {
@@ -51,7 +51,8 @@ export async function getDetalheOficina(req: FastifyRequest, reply: FastifyReply
     const { id } = req.params as { id: string }
     return reply.send(await buscarDetalheOficina(id))
   } catch (err: any) {
-    if (err.message === 'OFICINA_NAO_ENCONTRADA') return reply.status(404).send({ error: 'Oficina não encontrada' })
+    if (err.message === 'OFICINA_NAO_ENCONTRADA')
+      return reply.status(404).send({ error: 'Oficina não encontrada' })
     return reply.status(500).send({ error: 'Erro interno' })
   }
 }
@@ -60,7 +61,8 @@ export async function getAgendamentos(req: FastifyRequest, reply: FastifyReply) 
   try {
     return reply.send({ agendamentos: await listarAgendamentosMotorista(extrairUserId(req)) })
   } catch (err: any) {
-    if (err.message === 'PERFIL_NAO_ENCONTRADO') return reply.status(400).send({ error: 'Perfil não encontrado' })
+    if (err.message === 'PERFIL_NAO_ENCONTRADO')
+      return reply.status(400).send({ error: 'Perfil não encontrado' })
     return reply.status(500).send({ error: 'Erro interno' })
   }
 }
@@ -69,24 +71,52 @@ export async function getVeiculos(req: FastifyRequest, reply: FastifyReply) {
   try {
     return reply.send({ veiculos: await buscarVeiculosMotorista(extrairUserId(req)) })
   } catch (err: any) {
-    if (err.message === 'PERFIL_NAO_ENCONTRADO') return reply.status(400).send({ error: 'Perfil não encontrado' })
+    if (err.message === 'PERFIL_NAO_ENCONTRADO')
+      return reply.status(400).send({ error: 'Perfil não encontrado' })
     return reply.status(500).send({ error: 'Erro interno' })
   }
 }
 
-export async function postAgendamento(req: FastifyRequest, reply:
-  FastifyReply) {
-    try {
-      const id = extrairUserId(req)
-      const agendamento = await criarAgendamento(id, req.body as CriarAgendamentoDTO)
-      return reply.status(201).send({ agendamento })
-    } catch (err: any) {
-      if (err.message === 'PERFIL_NAO_ENCONTRADO')  return reply.status(400).send({ error: 'Perfil de motorista não encontrado' })
-      if (err.message === 'VEICULO_NAO_ENCONTRADO') return reply.status(400).send({ error: 'Veículo não encontrado' })
-      if (err.message === 'SERVICO_NAO_ENCONTRADO') return reply.status(400).send({ error: 'Serviço não encontrado ou inativo' })
-      if (err.message === 'OFICINA_NAO_ENCONTRADA') return reply.status(400).send({ error: 'Oficina não encontrada' })
-      if (err.message === 'DATA_NO_PASSADO')        return reply.status(400).send({ error: 'Data do agendamento não pode ser no passado' })
-      if (err.message === 'HORARIO_INDISPONIVEL')   return reply.status(409).send({ error: 'Horário indisponível para este serviço' })
-      return reply.status(500).send({ error: 'Erro interno' })
-    }
+export async function postAgendamento(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const id = extrairUserId(req)
+    const agendamento = await criarAgendamento(id, req.body as CriarAgendamentoDTO)
+    return reply.status(201).send({ agendamento })
+  } catch (err: any) {
+    if (err.message === 'PERFIL_NAO_ENCONTRADO')
+      return reply.status(400).send({ error: 'Perfil de motorista não encontrado' })
+    if (err.message === 'VEICULO_NAO_ENCONTRADO')
+      return reply.status(400).send({ error: 'Veículo não encontrado' })
+    if (err.message === 'SERVICO_NAO_ENCONTRADO')
+      return reply.status(400).send({ error: 'Serviço não encontrado ou inativo' })
+    if (err.message === 'OFICINA_NAO_ENCONTRADA')
+      return reply.status(400).send({ error: 'Oficina não encontrada' })
+    if (err.message === 'DATA_INVALIDA')
+      return reply.status(400).send({ error: 'Data inválida' })
+    if (err.message === 'DATA_NO_PASSADO')
+      return reply.status(400).send({ error: 'Data do agendamento não pode ser no passado' })
+    if (err.message === 'OFICINA_FECHADA_NO_DIA')
+      return reply.status(400).send({ error: 'Oficina não atende neste dia da semana' })
+    if (err.message === 'FORA_DO_HORARIO')
+      return reply.status(400).send({ error: 'Horário fora do funcionamento da oficina' })
+    if (err.message === 'DIA_BLOQUEADO')
+      return reply.status(400).send({ error: 'Oficina não atende nesta data' })
+    if (err.message === 'HORARIO_INDISPONIVEL')
+      return reply.status(409).send({ error: 'Horário indisponível para este serviço' })
+    return reply.status(500).send({ error: 'Erro interno' })
   }
+}
+
+export async function cancelar(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { id } = req.params as { id: string }
+    await cancelarAgendamento(extrairUserId(req), id)
+    return reply.send({ ok: true })
+  } catch (err: any) {
+    if (err.message === 'PERFIL_NAO_ENCONTRADO')
+      return reply.status(400).send({ error: 'Perfil não encontrado' })
+    if (err.message === 'AGENDAMENTO_NAO_CANCELAVEL')
+      return reply.status(400).send({ error: 'Agendamento não pode ser cancelado (já foi recusado, concluído ou cancelado)' })
+    return reply.status(500).send({ error: 'Erro interno' })
+  }
+}

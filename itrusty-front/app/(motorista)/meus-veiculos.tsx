@@ -103,7 +103,7 @@ export default function MeusVeiculos() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+        <TouchableOpacity onPress={() => router.navigate('/(motorista)/perfil' as any)} hitSlop={12}>
           <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
         <Text style={s.headerTitulo}>Meus veículos</Text>

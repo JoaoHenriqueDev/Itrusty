@@ -23,7 +23,7 @@ export default function SobreOficina() {
     <View style={[s.container, { paddingBottom: insets.bottom }]}>
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + Spacing.sm }]}>
-        <TouchableOpacity style={s.voltarBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={s.voltarBtn} onPress={() => router.navigate('/(oficina)/perfil' as any)}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
         <Text style={s.headerTitulo}>Sobre o iTrusty</Text>

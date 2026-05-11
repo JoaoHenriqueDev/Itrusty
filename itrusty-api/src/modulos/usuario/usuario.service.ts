@@ -7,7 +7,7 @@ export async function atualizarPushToken(userId: string, token: string) {
 
 export async function buscarPerfilUsuario(userId: string) {
   const user = await prisma.user.findUnique({
-    where:  { id: userId },
+    where: { id: userId },
     select: { id: true, name: true, email: true, phone: true, role: true },
   })
   if (!user) throw new Error('USUARIO_NAO_ENCONTRADO')
@@ -16,28 +16,20 @@ export async function buscarPerfilUsuario(userId: string) {
 
 export async function atualizarPerfilUsuario(userId: string, data: AtualizarUsuarioDTO) {
   return prisma.$transaction(async (tx) => {
-    if (data.email) {
-      const emailNorm = data.email.toLowerCase().trim()
+    const emailNorm = data.email?.toLowerCase().trim()
+
+    if (emailNorm) {
       const existe = await tx.user.findFirst({
         where: { email: emailNorm, NOT: { id: userId } },
       })
       if (existe) throw new Error('EMAIL_JA_CADASTRADO')
-
-      return tx.user.update({
-        where: { id: userId },
-        data: {
-          ...(data.name  !== undefined && { name:  data.name.trim()  }),
-          email: emailNorm,
-          ...(data.phone !== undefined && { phone: data.phone.trim() }),
-        },
-        select: { id: true, name: true, email: true, phone: true, role: true },
-      })
     }
 
     return tx.user.update({
       where: { id: userId },
       data: {
-        ...(data.name  !== undefined && { name:  data.name.trim()  }),
+        ...(data.name !== undefined && { name: data.name.trim() }),
+        ...(emailNorm !== undefined && { email: emailNorm }),
         ...(data.phone !== undefined && { phone: data.phone.trim() }),
       },
       select: { id: true, name: true, email: true, phone: true, role: true },
@@ -53,10 +45,10 @@ export async function adicionarVeiculo(userId: string, data: AdicionarVeiculoDTO
     return await prisma.veiculo.create({
       data: {
         motoristaId: motorista.id,
-        marca:  data.marca,
+        marca: data.marca,
         modelo: data.modelo,
-        ano:    data.ano,
-        placa:  data.placa.toUpperCase().trim(),
+        ano: data.ano,
+        placa: data.placa.toUpperCase().trim(),
       },
     })
   } catch (err: any) {
@@ -67,13 +59,13 @@ export async function adicionarVeiculo(userId: string, data: AdicionarVeiculoDTO
 
 export async function removerVeiculo(userId: string, veiculoId: string) {
   const motorista = await prisma.motorista.findUnique({
-    where:   { userId },
+    where: { userId },
     include: { veiculos: true },
   })
   if (!motorista) throw new Error('PERFIL_NAO_ENCONTRADO')
   if (motorista.veiculos.length <= 1) throw new Error('ULTIMO_VEICULO')
 
-  const veiculo = motorista.veiculos.find(v => v.id === veiculoId)
+  const veiculo = motorista.veiculos.find((v) => v.id === veiculoId)
   if (!veiculo) throw new Error('VEICULO_NAO_ENCONTRADO')
 
   await prisma.veiculo.delete({ where: { id: veiculoId } })

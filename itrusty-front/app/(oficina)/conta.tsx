@@ -194,7 +194,7 @@ export default function ContaOficina() {
         horarios,
       })
       invalidarCacheOficina()
-      router.back()
+      router.navigate('/(oficina)/perfil' as any)
     } catch (err: any) {
       setErro(err.message ?? 'Não foi possível salvar')
     } finally {
@@ -378,7 +378,7 @@ export default function ContaOficina() {
       </ScrollView>
 
       <View style={[s.rodape, { paddingBottom: Math.max(Spacing.xl, insets.bottom) }]}>
-        <TouchableOpacity style={s.voltarBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={s.voltarBtn} onPress={() => router.navigate('/(oficina)/perfil' as any)}>
           <Text style={s.voltarTexto}>Voltar</Text>
         </TouchableOpacity>
         <TouchableOpacity

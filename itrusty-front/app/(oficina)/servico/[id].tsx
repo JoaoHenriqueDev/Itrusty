@@ -44,14 +44,14 @@ export default function EditarServico() {
     api.get<{ servicos: Servico[] }>('/oficina/servicos')
       .then(res => {
         const sv = res.servicos.find(s => s.id === id)
-        if (!sv) { router.back(); return }
+        if (!sv) { router.navigate('/(oficina)/servicos' as any); return }
         setNome(sv.nome)
         setDescricao(sv.descricao ?? '')
         setDuracao(String(sv.duracaoMinutos))
         setPreco(sv.preco.toFixed(2).replace('.', ','))
         setAtivo(sv.ativo)
       })
-      .catch(() => router.back())
+      .catch(() => router.navigate('/(oficina)/servicos' as any))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -84,7 +84,7 @@ export default function EditarServico() {
           ativo,
         })
       }
-      router.back()
+      router.navigate('/(oficina)/servicos' as any)
     } catch (err: any) {
       setErro(err.message ?? 'Não foi possível salvar o serviço')
     } finally {
@@ -96,7 +96,7 @@ export default function EditarServico() {
     setExcluindo(true)
     try {
       await api.delete(`/oficina/servicos/${id}`)
-      router.back()
+      router.navigate('/(oficina)/servicos' as any)
     } catch (err: any) {
       setErro(err.message ?? 'Não foi possível excluir o serviço')
     } finally {
@@ -143,7 +143,7 @@ export default function EditarServico() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={s.tituloRow}>
-          <TouchableOpacity style={s.voltarBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={s.voltarBtn} onPress={() => router.navigate('/(oficina)/servicos' as any)}>
             <Ionicons name="arrow-back" size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={s.titulo}>{novo ? 'Novo serviço.' : 'Editar serviço.'}</Text>

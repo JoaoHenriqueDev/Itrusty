@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -15,33 +15,33 @@ const CATEGORIAS: Categoria[] = [
     itens: [
       {
         pergunta: 'Como altero os dados da minha oficina?',
-        resposta: 'Vá em Perfil → Dados da oficina. Você pode editar o nome, foto, endereço e horários de funcionamento.',
+        resposta: 'VÃ¡ em Perfil â†’ Dados da oficina. VocÃª pode editar o nome, foto, endereÃ§o e horÃ¡rios de funcionamento.',
       },
       {
         pergunta: 'Como adiciono ou altero a foto da minha oficina?',
-        resposta: 'Na tela de Dados da oficina, toque no banner de foto no topo da página para selecionar uma imagem da sua galeria.',
+        resposta: 'Na tela de Dados da oficina, toque no banner de foto no topo da pÃ¡gina para selecionar uma imagem da sua galeria.',
       },
       {
         pergunta: 'Como altero minha senha?',
-        resposta: 'Atualmente a autenticação é gerenciada pelo provedor de login (Google/Apple). Para alterar a senha, acesse as configurações da sua conta Google ou Apple ID.',
+        resposta: 'Atualmente a autenticaÃ§Ã£o Ã© gerenciada pelo provedor de login (Google/Apple). Para alterar a senha, acesse as configuraÃ§Ãµes da sua conta Google ou Apple ID.',
       },
     ],
   },
   {
-    titulo: 'Serviços',
+    titulo: 'ServiÃ§os',
     icone: 'construct-outline',
     itens: [
       {
-        pergunta: 'Como adiciono um novo serviço?',
-        resposta: 'Vá em Perfil → Gerenciar serviços → botão "+" no canto superior. Preencha o nome, preço e tempo estimado do serviço.',
+        pergunta: 'Como adiciono um novo serviÃ§o?',
+        resposta: 'VÃ¡ em Perfil â†’ Gerenciar serviÃ§os â†’ botÃ£o "+" no canto superior. Preencha o nome, preÃ§o e tempo estimado do serviÃ§o.',
       },
       {
-        pergunta: 'Posso desativar um serviço temporariamente?',
-        resposta: 'Sim. Na lista de serviços, utilize o toggle ao lado de cada serviço para ativá-lo ou desativá-lo sem precisar excluí-lo.',
+        pergunta: 'Posso desativar um serviÃ§o temporariamente?',
+        resposta: 'Sim. Na lista de serviÃ§os, utilize o toggle ao lado de cada serviÃ§o para ativÃ¡-lo ou desativÃ¡-lo sem precisar excluÃ­-lo.',
       },
       {
-        pergunta: 'Como excluo um serviço?',
-        resposta: 'Toque no serviço para abrir os detalhes, role até o final e selecione "Excluir serviço". A ação é permanente e não pode ser desfeita.',
+        pergunta: 'Como excluo um serviÃ§o?',
+        resposta: 'Toque no serviÃ§o para abrir os detalhes, role atÃ© o final e selecione "Excluir serviÃ§o". A aÃ§Ã£o Ã© permanente e nÃ£o pode ser desfeita.',
       },
     ],
   },
@@ -51,29 +51,29 @@ const CATEGORIAS: Categoria[] = [
     itens: [
       {
         pergunta: 'Como confirmo um agendamento?',
-        resposta: 'Na aba Agenda, toque no agendamento e selecione "Confirmar". O motorista será notificado automaticamente.',
+        resposta: 'Na aba Agenda, toque no agendamento e selecione "Confirmar". O motorista serÃ¡ notificado automaticamente.',
       },
       {
         pergunta: 'Como cancelo um agendamento?',
         resposta: 'Abra o agendamento na aba Agenda e selecione "Cancelar". Informe o motivo para que o cliente seja notificado corretamente.',
       },
       {
-        pergunta: 'Posso definir horários diferentes para cada dia?',
-        resposta: 'Sim. Em Perfil → Horários de funcionamento, você pode configurar horários de abertura e fechamento separadamente para dias úteis, sábado e domingo.',
+        pergunta: 'Posso definir horÃ¡rios diferentes para cada dia?',
+        resposta: 'Sim. Em Perfil â†’ HorÃ¡rios de funcionamento, vocÃª pode configurar horÃ¡rios de abertura e fechamento separadamente para dias Ãºteis, sÃ¡bado e domingo.',
       },
     ],
   },
   {
-    titulo: 'Suporte Técnico',
+    titulo: 'Suporte TÃ©cnico',
     icone: 'settings-outline',
     itens: [
       {
-        pergunta: 'O aplicativo não está carregando. O que fazer?',
-        resposta: 'Verifique sua conexão com a internet. Se o problema persistir, feche e abra o aplicativo novamente. Caso continue, entre em contato com nosso suporte.',
+        pergunta: 'O aplicativo nÃ£o estÃ¡ carregando. O que fazer?',
+        resposta: 'Verifique sua conexÃ£o com a internet. Se o problema persistir, feche e abra o aplicativo novamente. Caso continue, entre em contato com nosso suporte.',
       },
       {
-        pergunta: 'Meus dados não foram salvos. O que aconteceu?',
-        resposta: 'Certifique-se de que você tem conexão com a internet ao salvar alterações. Se o problema persistir, entre em contato com o suporte informando o que tentou fazer.',
+        pergunta: 'Meus dados nÃ£o foram salvos. O que aconteceu?',
+        resposta: 'Certifique-se de que vocÃª tem conexÃ£o com a internet ao salvar alteraÃ§Ãµes. Se o problema persistir, entre em contato com o suporte informando o que tentou fazer.',
       },
     ],
   },
@@ -108,7 +108,7 @@ export default function AjudaOficina() {
     <View style={[s.container, { paddingBottom: insets.bottom }]}>
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + Spacing.sm }]}>
-        <TouchableOpacity style={s.voltarBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={s.voltarBtn} onPress={() => router.navigate('/(oficina)/perfil' as any)}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
         <Text style={s.headerTitulo}>Central de Ajuda</Text>
@@ -121,7 +121,7 @@ export default function AjudaOficina() {
           <Ionicons name="search-outline" size={18} color={Colors.textMuted} />
           <TextInput
             style={s.buscaInput}
-            placeholder="Buscar dúvidas..."
+            placeholder="Buscar dÃºvidas..."
             placeholderTextColor={Colors.textMuted}
             value={busca}
             onChangeText={setBusca}
@@ -189,8 +189,8 @@ export default function AjudaOficina() {
             <Ionicons name="chatbubble-ellipses-outline" size={22} color={Colors.accent} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.suporteTitulo}>Não encontrou o que procurava?</Text>
-            <Text style={s.suporteSub}>Nossa equipe está disponível de segunda a sexta, das 8h às 18h</Text>
+            <Text style={s.suporteTitulo}>NÃ£o encontrou o que procurava?</Text>
+            <Text style={s.suporteSub}>Nossa equipe estÃ¡ disponÃ­vel de segunda a sexta, das 8h Ã s 18h</Text>
           </View>
         </View>
 

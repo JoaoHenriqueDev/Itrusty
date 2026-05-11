@@ -1,12 +1,12 @@
 export interface AtualizarUsuarioDTO {
-  name?:  string
+  name?: string
   email?: string
   phone?: string
 }
 
 export interface AdicionarVeiculoDTO {
-  marca:  string
+  marca: string
   modelo: string
-  ano:    number
-  placa:  string
+  ano: number
+  placa: string
 }
