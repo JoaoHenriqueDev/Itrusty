@@ -52,6 +52,9 @@ export default function DetalheOficina() {
   const [erro,     setErro]     = useState(false)
 
   useEffect(() => {
+    setOficina(null)
+    setErro(false)
+    setLoading(true)
     api.get<Oficina>(`/motorista/oficinas/${id}`)
       .then(setOficina)
       .catch(() => setErro(true))
@@ -160,9 +163,10 @@ export default function DetalheOficina() {
           {temMapa && (
             <View style={s.mapaContainer}>
               <MapView
+                key={`map-${oficina.latitude}-${oficina.longitude}`}
                 style={s.mapa}
                 provider={PROVIDER_DEFAULT}
-                initialRegion={{
+                region={{
                   latitude:       oficina.latitude!,
                   longitude:      oficina.longitude!,
                   latitudeDelta:  0.008,
