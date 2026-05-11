@@ -40,6 +40,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
+    // Revoga o refreshToken no servidor (best-effort — logout local ocorre independente)
+    try {
+      const refreshToken = await getSecure('refreshToken')
+      if (refreshToken) {
+        await api.post('/auth/logout', { refreshToken })
+      }
+    } catch {
+      // Falha silenciosa — o logout local prossegue normalmente
+    }
+
     await Promise.all([
       deleteSecure('token'),
       deleteSecure('refreshToken'),
@@ -90,8 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             { supabaseToken: session.access_token }
           )
           await signIn(res.accessToken, res.user, res.refreshToken)
-        } catch (err) {
-          console.error('[AuthContext] Falha no login social:', err)
+        } catch {
+          // Falha silenciosa — usuário pode tentar fazer login manualmente
         }
       }
     })

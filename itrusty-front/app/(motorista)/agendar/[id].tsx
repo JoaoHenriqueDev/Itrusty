@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, TextInput,
@@ -11,7 +11,12 @@ import { Colors, Spacing, Typography, Radii, Shadows } from '../../../constants/
 
 type Servico  = { id: string; nome: string; duracaoMinutos: number; preco: number }
 type Veiculo  = { id: string; marca: string; modelo: string; ano: number; placa: string }
-type Oficina  = { id: string; nome: string; servicos: Servico[] }
+type Horario  = { dia: string; aberto: boolean; abertura: string | null; fechamento: string | null }
+type Oficina  = { id: string; nome: string; servicos: Servico[]; horarios: Horario[] }
+
+const DIAS_SEMANA: Record<number, string> = {
+  0: 'DOM', 1: 'SEG', 2: 'TER', 3: 'QUA', 4: 'QUI', 5: 'SEX', 6: 'SAB',
+}
 
 function formatPreco(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -45,10 +50,10 @@ function gerarDatas(qtd = 14): { label: string; valor: string; diaSemana: string
 function gerarSlots(): string[] {
   const slots: string[] = []
   for (let h = 8; h < 18; h++) {
-    slots.push(`${String(h).padStart(2,'0')}:00`)
-    if (h < 17 || true) slots.push(`${String(h).padStart(2,'0')}:30`)
+    slots.push(`${String(h).padStart(2, '0')}:00`)
+    slots.push(`${String(h).padStart(2, '0')}:30`)
   }
-  return slots.filter(s => s <= '17:30')
+  return slots.filter((s) => s <= '17:30')
 }
 
 const DATAS = gerarDatas()
@@ -83,6 +88,18 @@ export default function Agendar() {
       .catch(() => Alert.alert('Erro', 'Não foi possível carregar os dados.'))
       .finally(() => setLoadingInit(false))
   }, [])
+
+  const horarioDoDia = useMemo(() => {
+    if (!data || !oficina?.horarios?.length) return null
+    const [ano, mes, dia] = data.split('-').map(Number)
+    const diaSemana = DIAS_SEMANA[new Date(ano, mes - 1, dia).getDay()]
+    return oficina.horarios.find((h) => h.dia === diaSemana) ?? null
+  }, [data, oficina])
+
+  const slotsFiltrados = useMemo(() => {
+    if (!horarioDoDia?.aberto || !horarioDoDia.abertura || !horarioDoDia.fechamento) return []
+    return SLOTS.filter((s) => s >= horarioDoDia.abertura! && s <= horarioDoDia.fechamento!)
+  }, [horarioDoDia])
 
   const servicoSelecionado = oficina?.servicos.find(s => s.id === servicoId)
   const veiculoSelecionado = veiculos.find(v => v.id === veiculoId)
@@ -211,18 +228,25 @@ export default function Agendar() {
         {data !== '' && (
           <>
             <Text style={s.label}>Horário</Text>
-            <View style={s.slotsGrid}>
-              {SLOTS.map(slot => (
-                <TouchableOpacity
-                  key={slot}
-                  style={[s.slotChip, hora === slot && s.slotChipSel]}
-                  onPress={() => setHora(slot)}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[s.slotTexto, hora === slot && s.slotTextoSel]}>{slot}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {!horarioDoDia || !horarioDoDia.aberto ? (
+              <View style={s.fechadoCard}>
+                <Ionicons name="close-circle-outline" size={18} color={Colors.textMuted} />
+                <Text style={s.fechadoTexto}>Oficina fechada neste dia</Text>
+              </View>
+            ) : (
+              <View style={s.slotsGrid}>
+                {slotsFiltrados.map((slot) => (
+                  <TouchableOpacity
+                    key={slot}
+                    style={[s.slotChip, hora === slot && s.slotChipSel]}
+                    onPress={() => setHora(slot)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[s.slotTexto, hora === slot && s.slotTextoSel]}>{slot}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </>
         )}
 
@@ -301,6 +325,8 @@ const s = StyleSheet.create({
   dateLabel:            { fontSize: Typography.size.sm, color: Colors.primary, fontWeight: Typography.weight.bold, marginTop: 2 },
   dateLabelSel:         { color: Colors.surface },
   slotsGrid:            { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.sm },
+  fechadoCard:          { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, backgroundColor: Colors.surface, borderRadius: Radii.md, borderWidth: 1, borderColor: Colors.border, padding: Spacing.base, marginBottom: Spacing.sm },
+  fechadoTexto:         { fontSize: Typography.size.sm, color: Colors.textMuted },
   slotChip:             { backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border, borderRadius: Radii.md, paddingHorizontal: Spacing.base, paddingVertical: Spacing.sm, minWidth: 72, alignItems: 'center' },
   slotChipSel:          { borderColor: Colors.accent, backgroundColor: Colors.accent },
   slotTexto:            { fontSize: Typography.size.sm, color: Colors.primary, fontWeight: Typography.weight.medium },
