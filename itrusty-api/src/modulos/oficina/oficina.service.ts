@@ -22,19 +22,32 @@ async function getOficinaPorUserId(userId: string) {
   return oficina
 }
 
-async function geocodificarCep(cep: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const cepLimpo = cep.replace(/\D/g, '')
-    const res      = await fetch(
-      `https://nominatim.openstreetmap.org/search?postalcode=${cepLimpo}&country=BR&format=json&limit=1`,
+async function geocodificarEndereco(
+  cep: string, rua: string, cidade: string, estado: string,
+): Promise<{ lat: number; lng: number } | null> {
+  const tentar = async (q: string) => {
+    const res  = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
       { headers: { 'User-Agent': 'itrusty-api' }, signal: AbortSignal.timeout(5000) },
     )
     const data = await res.json() as { lat: string; lon: string }[]
-    if (!data.length) return null
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    return data.length ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null
+  }
+
+  try {
+    return (
+      await tentar(`${rua}, ${cidade}, ${estado}, Brasil`) ??
+      await tentar(`${cidade}, ${estado}, Brasil`) ??
+      await tentar(`${cep.replace(/\D/g, '')}, Brasil`)
+    )
   } catch {
     return null
   }
+}
+
+// mantém compatibilidade com chamadas antigas
+async function geocodificarCep(cep: string): Promise<{ lat: number; lng: number } | null> {
+  return geocodificarEndereco(cep, '', '', '')
 }
 
 // ─── onboarding ──────────────────────────────────────────────────────────────
@@ -66,7 +79,7 @@ export async function onboardingOficina(userId: string, data: OnboardingOficinaD
     })
   })
 
-  const coords = await geocodificarCep(data.cep)
+  const coords = await geocodificarEndereco(data.cep, data.rua, data.cidade, data.estado)
   if (coords) {
     await prisma.oficina.update({
       where: { id: oficina.id },
@@ -148,7 +161,13 @@ export async function atualizarPerfil(userId: string, data: AtualizarPerfilDTO) 
   })
 
   if (data.cep) {
-    const coords = await geocodificarCep(data.cep)
+    const atualizada = await prisma.oficina.findUnique({ where: { id: oficina.id } })
+    const coords = await geocodificarEndereco(
+      data.cep,
+      data.rua     ?? atualizada?.rua     ?? '',
+      data.cidade  ?? atualizada?.cidade  ?? '',
+      data.estado  ?? atualizada?.estado  ?? '',
+    )
     if (coords) {
       await prisma.oficina.update({
         where: { id: oficina.id },
