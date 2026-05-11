@@ -4,8 +4,8 @@ import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { api } from '../services/api'
+import { getSecure, saveSecure } from '../utils/storage'
 
-// Como as notificações aparecem com o app aberto
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -15,17 +15,15 @@ Notifications.setNotificationHandler({
 })
 
 async function registrarToken() {
-  // Push não funciona em simulador/emulador
   if (!Device.isDevice) return
 
-  // Canal Android (obrigatório para Android 8+)
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name:              'iTrusty',
-      importance:        Notifications.AndroidImportance.MAX,
-      vibrationPattern:  [0, 250, 250, 250],
-      lightColor:        '#F97316',
-      sound:             'default',
+      name:             'iTrusty',
+      importance:       Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor:       '#F97316',
+      sound:            'default',
     })
   }
 
@@ -42,23 +40,37 @@ async function registrarToken() {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined
   if (!projectId) return
 
-  const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId })
-  await api.patch('/usuario/push-token', { token }).catch(() => {})
+  // Não envia se não há sessão ativa
+  const jwtToken = await getSecure('token')
+  if (!jwtToken) return
+
+  const { data: novoToken } = await Notifications.getExpoPushTokenAsync({ projectId })
+
+  // Só envia ao backend se o token mudou
+  const tokenSalvo = await getSecure('pushToken')
+  if (novoToken === tokenSalvo) return
+
+  await api.patch('/usuario/push-token', { token: novoToken }).catch(() => {})
+  await saveSecure('pushToken', novoToken)
 }
 
 export function usePushNotifications(onTap?: () => void) {
-  const notifListener = useRef<Notifications.EventSubscription>()
+  // Ref garante que o callback sempre usa a versão mais recente (sem closure stale)
+  const onTapRef = useRef(onTap)
+  const notifListener    = useRef<Notifications.EventSubscription>()
   const responseListener = useRef<Notifications.EventSubscription>()
+
+  useEffect(() => {
+    onTapRef.current = onTap
+  }, [onTap])
 
   useEffect(() => {
     registrarToken()
 
-    // Notificação recebida com app aberto (exibe automaticamente pelo handler acima)
     notifListener.current = Notifications.addNotificationReceivedListener(() => {})
 
-    // Usuário tocou na notificação
     responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
-      onTap?.()
+      onTapRef.current?.()
     })
 
     return () => {

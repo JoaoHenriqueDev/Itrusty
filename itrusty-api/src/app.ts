@@ -9,7 +9,15 @@ import { usuarioRotas } from './modulos/usuario/usuario.rotas'
 import { oficinaRotas } from './modulos/oficina/oficina.rotas'
 import { notificacaoRotas } from './modulos/notificacao/notificacao.rotas'
 
-const app = Fastify({ logger: true })
+const app = Fastify({
+  logger: {
+    level:  process.env.NODE_ENV === 'production' ? 'warn' : 'info',
+    redact: {
+      paths:  ['req.body.password', 'req.body.supabaseToken', 'req.body.token', 'req.body.refreshToken'],
+      remove: true,
+    },
+  },
+})
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:8081')
   .split(',')
@@ -28,7 +36,15 @@ app.register(fastifyCors, {
 if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET não definido')
 if (!process.env.SUPABASE_URL) throw new Error('SUPABASE_URL não definida')
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY não definida')
-app.register(fastifyJwt, { secret: process.env.JWT_SECRET! })
+app.register(fastifyJwt, {
+  secret: process.env.JWT_SECRET!,
+  sign:   { iss: 'itrusty-api', aud: 'itrusty-app' },
+  verify: {
+    allowedIss:  ['itrusty-api'],
+    allowedAud:  'itrusty-app',
+    algorithms:  ['HS256'],
+  },
+})
   app.register(fastifyHelmet)
 
 app.register(authRotas,        { prefix: '/auth' })

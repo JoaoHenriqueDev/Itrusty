@@ -1,5 +1,7 @@
 import { FastifyRequest } from 'fastify'
 
 export function extrairUserId(req: FastifyRequest): string {
-  return (req.user as { id: string }).id
+  const user = req.user as { id?: string }
+  if (!user?.id) throw new Error('PAYLOAD_JWT_INVALIDO')
+  return user.id
 }

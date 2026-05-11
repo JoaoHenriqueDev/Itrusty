@@ -46,8 +46,12 @@ return prisma.$transaction(async (tx) => {
 
 const PAGE_SIZE = 20
 
+const MAX_OFICINAS = 500
+
 export async function buscarOficinas(lat?: number, lng?: number, page = 1) {
   const todas = await prisma.oficina.findMany({
+    where: { latitude: { not: null }, longitude: { not: null } },
+    take:  MAX_OFICINAS,
     select: {
       id:         true,
       nome:       true,

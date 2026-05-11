@@ -7,7 +7,7 @@ import {
   adicionarVeiculo,
   removerVeiculo,
 } from './usuario.service'
-import { AtualizarUsuarioDTO, AdicionarVeiculoDTO } from './motorista.dto'
+import { AtualizarUsuarioDTO, AdicionarVeiculoDTO } from './usuario.dto'
 
 export async function patchPushToken(req: FastifyRequest, reply: FastifyReply) {
   try {

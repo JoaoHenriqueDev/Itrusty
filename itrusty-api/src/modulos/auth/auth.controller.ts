@@ -16,7 +16,7 @@ export async function cadastrar(req: FastifyRequest<{ Body: CadastroDTO }>, repl
     })
   } catch (err: any) {
     if (err.message === 'EMAIL_JA_CADASTRADO' || err.code === 'P2002') {
-      return reply.status(400).send({ error: 'E-mail já cadastrado' })
+      return reply.status(400).send({ error: 'Não foi possível criar a conta com esses dados.' })
     }
     return reply.status(500).send({ error: 'Erro interno' })
   }
