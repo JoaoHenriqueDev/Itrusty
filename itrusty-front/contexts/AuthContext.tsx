@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../services/supabase'
 import { api, setUnauthorizedCallback } from '../services/api'
 import { saveSecure, getSecure, deleteSecure } from '../utils/storage'
@@ -13,7 +13,7 @@ type AuthContextType = {
   token: string | null
   user: User | null
   loading: boolean
-  signIn: (token: string, user: User) => Promise<void>
+  signIn: (accessToken: string, user: User, refreshToken: string) => Promise<void>
   signOut: () => Promise<void>
   updateUser: (user: User) => void
 }
@@ -21,35 +21,39 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null)
-  const [user, setUser]   = useState<User | null>(null)
+  const [auth, setAuth] = useState<{ token: string | null; user: User | null }>({
+    token: null,
+    user: null,
+  })
   const [loading, setLoading] = useState(true)
+  const isSigningInRef = useRef(false)
 
-  async function signIn(newToken: string, newUser: User) {
+  async function signIn(accessToken: string, newUser: User, refreshToken: string) {
+    isSigningInRef.current = true
     await Promise.all([
-      saveSecure('token', newToken),
+      saveSecure('token', accessToken),
+      saveSecure('refreshToken', refreshToken),
       saveSecure('user', JSON.stringify(newUser)),
     ])
-    setToken(newToken)
-    setUser(newUser)
+    setAuth({ token: accessToken, user: newUser })
+    isSigningInRef.current = false
   }
 
   async function signOut() {
     await Promise.all([
       deleteSecure('token'),
+      deleteSecure('refreshToken'),
       deleteSecure('user'),
     ])
     await supabase.auth.signOut()
-    setToken(null)
-    setUser(null)
+    setAuth({ token: null, user: null })
   }
 
   function updateUser(updatedUser: User) {
-    setUser(updatedUser)
+    setAuth(prev => ({ ...prev, user: updatedUser }))
     saveSecure('user', JSON.stringify(updatedUser))
   }
 
-  // Registra o signOut para ser chamado automaticamente quando o token expirar
   useEffect(() => {
     setUnauthorizedCallback(signOut)
   }, [])
@@ -61,34 +65,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         getSecure('user'),
       ])
       if (savedToken && savedUser) {
-        setToken(savedToken)
-        setUser(JSON.parse(savedUser))
+        try {
+          setAuth({ token: savedToken, user: JSON.parse(savedUser) })
+        } catch {
+          await signOut()
+        }
       }
       setLoading(false)
     }
     carregarSessao()
   }, [])
 
-  // Ouve o login social via OAuth (redirect no web)
+  // Ouve login social via OAuth redirect (web)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        if (isSigningInRef.current) return
         const savedToken = await getSecure('token')
         if (savedToken) return
 
         try {
-          const res = await api.post<{ token: string; user: User }>('/auth/social', {
-            supabaseToken: session.access_token
-          })
-          await signIn(res.token, res.user)
-        } catch {}
+          const res = await api.post<{ accessToken: string; refreshToken: string; user: User }>(
+            '/auth/social',
+            { supabaseToken: session.access_token }
+          )
+          await signIn(res.accessToken, res.user, res.refreshToken)
+        } catch (err) {
+          console.error('[AuthContext] Falha no login social:', err)
+        }
       }
     })
     return () => subscription.unsubscribe()
   }, [])
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, signIn, signOut, updateUser }}>
+    <AuthContext.Provider value={{ token: auth.token, user: auth.user, loading, signIn, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

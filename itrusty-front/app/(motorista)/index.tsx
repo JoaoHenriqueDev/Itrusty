@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../services/api'
+import { useNotificacoes } from '../../hooks/useNotificacoes'
 import { Colors, Spacing, Typography, Radii, Shadows } from '../../constants/theme'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { SkeletonRow } from '../../components/ui/SkeletonCard'
@@ -34,6 +35,7 @@ export default function HomeMotorista() {
   const { user } = useAuth()
   const router   = useRouter()
   const insets   = useSafeAreaInsets()
+  const { naoLidas } = useNotificacoes()
 
   const [oficinas,      setOficinas]      = useState<Oficina[]>([])
   const [loading,       setLoading]       = useState(true)
@@ -49,8 +51,8 @@ export default function HomeMotorista() {
       const params: Record<string, string | number> = {}
       const loc = c ?? coords
       if (loc) { params.lat = loc.lat; params.lng = loc.lng }
-      const res = await api.get<{ data: Oficina[] }>('/motorista/home', params)
-      setOficinas(res.data ?? [])
+      const res = await api.get<{ oficinas: { data: Oficina[] } }>('/motorista/home', params)
+      setOficinas(res.oficinas?.data ?? [])
     } catch {
       setOficinas([])
     } finally {
@@ -143,8 +145,17 @@ export default function HomeMotorista() {
           )}
           <Ionicons name="chevron-down" size={14} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={s.sinoBotao} accessibilityLabel="Notificações">
+        <TouchableOpacity
+          style={s.sinoBotao}
+          onPress={() => router.push('/(motorista)/notificacoes')}
+          accessibilityLabel="Notificações"
+        >
           <Ionicons name="notifications-outline" size={20} color={Colors.primary} />
+          {naoLidas > 0 && (
+            <View style={s.badge}>
+              <Text style={s.badgeTexto}>{naoLidas > 9 ? '9+' : naoLidas}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -209,6 +220,8 @@ const s = StyleSheet.create({
   localizacao:    { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '80%' },
   locTexto:       { fontSize: Typography.size.sm, fontWeight: Typography.weight.semibold, color: Colors.primary, flexShrink: 1 },
   sinoBotao:      { width: 40, height: 40, borderRadius: Radii.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },
+  badge:          { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: Colors.error, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.surface },
+  badgeTexto:     { fontSize: 10, fontWeight: Typography.weight.bold, color: Colors.surface },
   titulo:         { fontSize: Typography.size['2xl'], fontWeight: Typography.weight.extrabold, color: Colors.primary, marginBottom: Spacing.lg, paddingHorizontal: Spacing.lg, lineHeight: Typography.size['2xl'] * 1.35 },
   buscaContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: Radii.full, marginHorizontal: Spacing.lg, marginBottom: Spacing.base, paddingHorizontal: Spacing.base },
   buscaIcon:      { marginRight: Spacing.sm },

@@ -1,80 +1,107 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Colors } from '../../constants/colors'
+import { Ionicons } from '@expo/vector-icons'
+import { Colors, Spacing, Typography, Radii, Shadows } from '../../constants/theme'
+
+type Role = 'MOTORISTA' | 'OFICINA'
+
+const OPCOES: { role: Role; titulo: string; descricao: string; icone: keyof typeof Ionicons.glyphMap }[] = [
+  {
+    role:      'MOTORISTA',
+    titulo:    'Sou motorista',
+    descricao: 'Quero achar uma oficina de confiança e agendar.',
+    icone:     'car-outline',
+  },
+  {
+    role:      'OFICINA',
+    titulo:    'Tenho uma oficina',
+    descricao: 'Quero gerenciar minha agenda e atender mais clientes.',
+    icone:     'construct-outline',
+  },
+]
 
 export default function Role() {
-  const [selecionado, setSelecionado] = useState<'MOTORISTA' | 'OFICINA' | null>(null)
-  const router = useRouter()
+  const [selecionado, setSelecionado] = useState<Role | null>(null)
+  const router  = useRouter()
+  const insets  = useSafeAreaInsets()
 
   function continuar() {
     if (!selecionado) return
-    if (selecionado === 'MOTORISTA') router.push('/(onboarding)/motorista')
-    else router.push('/(onboarding)/oficina')
+    router.push(selecionado === 'MOTORISTA' ? '/(onboarding)/motorista' : '/(onboarding)/oficina')
   }
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.lg }]}>
       <Image source={require('../../assets/logo.png')} style={s.logo} resizeMode="contain" />
-      <Text style={s.titulo}>Você é{'\n'}motorista ou{'\n'}<Text style={s.destaque}>oficina</Text>?</Text>
 
-      <TouchableOpacity
-        style={[s.card, selecionado === 'MOTORISTA' && s.cardSelecionado]}
-        onPress={() => setSelecionado('MOTORISTA')}
-      >
-        <View style={[s.icone, selecionado === 'MOTORISTA' && s.iconeSelecionado]}>
-          <Text style={s.iconeEmoji}>🚗</Text>
-        </View>
-        <View style={s.cardTexto}>
-          <Text style={[s.cardTitulo, selecionado === 'MOTORISTA' && s.cardTituloBranco]}>Sou motorista</Text>
-          <Text style={[s.cardSub, selecionado === 'MOTORISTA' && s.cardSubBranco]}>Quero achar uma oficina de confiança e agendar.</Text>
-        </View>
-        <Text style={[s.seta, selecionado === 'MOTORISTA' && s.setaBranca]}>›</Text>
-      </TouchableOpacity>
+      <Text style={s.titulo}>
+        Você é{'\n'}motorista ou{'\n'}
+        <Text style={s.destaque}>oficina</Text>?
+      </Text>
+      <Text style={s.subtitulo}>Personalizamos o app pra você.</Text>
 
-      <TouchableOpacity
-        style={[s.card, selecionado === 'OFICINA' && s.cardSelecionado]}
-        onPress={() => setSelecionado('OFICINA')}
-      >
-        <View style={[s.icone, selecionado === 'OFICINA' && s.iconeSelecionado]}>
-          <Text style={s.iconeEmoji}>🔧</Text>
-        </View>
-        <View style={s.cardTexto}>
-          <Text style={[s.cardTitulo, selecionado === 'OFICINA' && s.cardTituloBranco]}>Tenho uma oficina</Text>
-          <Text style={[s.cardSub, selecionado === 'OFICINA' && s.cardSubBranco]}>Quero gerenciar minha agenda e atender mais clientes.</Text>
-        </View>
-        <Text style={[s.seta, selecionado === 'OFICINA' && s.setaBranca]}>›</Text>
-      </TouchableOpacity>
+      <View style={s.opcoes}>
+        {OPCOES.map(({ role, titulo, descricao, icone }) => {
+          const sel = selecionado === role
+          return (
+            <TouchableOpacity
+              key={role}
+              style={[s.card, sel && s.cardSel]}
+              onPress={() => setSelecionado(role)}
+              activeOpacity={0.8}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: sel }}
+              accessibilityLabel={titulo}
+            >
+              <View style={[s.icone, sel && s.iconeSel]}>
+                <Ionicons name={icone} size={24} color={sel ? Colors.surface : Colors.primary} />
+              </View>
+              <View style={s.cardTexto}>
+                <Text style={[s.cardTitulo, sel && s.cardTituloSel]}>{titulo}</Text>
+                <Text style={[s.cardSub, sel && s.cardSubSel]}>{descricao}</Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={sel ? 'rgba(255,255,255,0.6)' : Colors.textMuted}
+              />
+            </TouchableOpacity>
+          )
+        })}
+      </View>
 
       <TouchableOpacity
         style={[s.botao, !selecionado && s.botaoDisabled]}
         onPress={continuar}
         disabled={!selecionado}
+        activeOpacity={0.8}
       >
-        <Text style={s.botaoTexto}>Continuar →</Text>
+        <Text style={s.botaoTexto}>Continuar</Text>
+        <Ionicons name="arrow-forward" size={18} color={Colors.surface} />
       </TouchableOpacity>
     </View>
   )
 }
 
 const s = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: Colors.background, padding: 24, paddingTop: 60 },
-  logo:             { width: 80, height: 60, marginBottom: 24 },
-  titulo:           { fontSize: 36, fontWeight: '800', color: Colors.primary, marginBottom: 32 },
-  destaque:         { color: Colors.accent },
-  card:             { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 16, padding: 16, marginBottom: 16 },
-  cardSelecionado:  { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  icone:            { width: 48, height: 48, borderRadius: 12, backgroundColor: Colors.lightGray, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  iconeSelecionado: { backgroundColor: Colors.accent },
-  iconeEmoji:       { fontSize: 22 },
-  cardTexto:        { flex: 1 },
-  cardTitulo:       { fontSize: 16, fontWeight: '700', color: Colors.primary, marginBottom: 4 },
-  cardTituloBranco: { color: Colors.white },
-  cardSub:          { fontSize: 13, color: Colors.textLight },
-  cardSubBranco:    { color: '#CBD5E0' },
-  seta:             { fontSize: 24, color: Colors.gray },
-  setaBranca:       { color: Colors.white },
-  botao:            { backgroundColor: Colors.accent, borderRadius: 50, padding: 18, alignItems: 'center', marginTop: 'auto' },
-  botaoDisabled:    { opacity: 0.4 },
-  botaoTexto:       { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  container:    { flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.lg },
+  logo:         { width: 64, height: 48, marginBottom: Spacing.xl },
+  titulo:       { fontSize: Typography.size['5xl'], fontWeight: Typography.weight.extrabold, color: Colors.primary, marginBottom: Spacing.xs, lineHeight: Typography.size['5xl'] * 1.15 },
+  destaque:     { color: Colors.accent },
+  subtitulo:    { fontSize: Typography.size.md, color: Colors.textSecondary, marginBottom: Spacing.xl },
+  opcoes:       { gap: Spacing.md, marginBottom: 'auto' as any },
+  card:         { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border, borderRadius: Radii.lg, padding: Spacing.base, gap: Spacing.md, ...Shadows.sm },
+  cardSel:      { backgroundColor: Colors.primary, borderColor: Colors.primary, ...Shadows.md },
+  icone:        { width: 52, height: 52, borderRadius: Radii.md, backgroundColor: Colors.surfaceMuted, justifyContent: 'center', alignItems: 'center' },
+  iconeSel:     { backgroundColor: Colors.accent },
+  cardTexto:    { flex: 1 },
+  cardTitulo:   { fontSize: Typography.size.base, fontWeight: Typography.weight.bold, color: Colors.primary, marginBottom: Spacing.xs },
+  cardTituloSel:{ color: Colors.surface },
+  cardSub:      { fontSize: Typography.size.sm, color: Colors.textSecondary, lineHeight: Typography.size.sm * 1.5 },
+  cardSubSel:   { color: 'rgba(255,255,255,0.65)' },
+  botao:        { flexDirection: 'row', backgroundColor: Colors.accent, borderRadius: Radii.full, paddingVertical: Spacing.base + 2, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.xl, ...Shadows.sm },
+  botaoDisabled:{ opacity: 0.4 },
+  botaoTexto:   { color: Colors.surface, fontWeight: Typography.weight.bold, fontSize: Typography.size.base },
 })

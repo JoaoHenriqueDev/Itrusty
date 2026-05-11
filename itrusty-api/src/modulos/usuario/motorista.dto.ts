@@ -12,3 +12,12 @@
       placa: string
     }
   }
+
+  export interface CriarAgendamentoDTO {
+    oficinaId: string
+    servicoId: string
+    veiculoId: string
+    dataServico: string  // YYYY-MM-DD
+    horaInicio: string   // HH:MM
+    observacao?: string
+  }

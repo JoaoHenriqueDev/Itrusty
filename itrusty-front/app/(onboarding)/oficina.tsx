@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, KeyboardAvoidingView, Platform
+  View, Text, TouchableOpacity, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../services/api'
-import { Colors } from '../../constants/colors'
+import { Colors, Spacing, Typography, Radii } from '../../constants/theme'
+import { Input } from '../../components/ui/Input'
 import { formatCep, formatCnpj, formatCelular } from '../../utils/formatters'
 
 const CATEGORIAS = ['MECANICA', 'ESTETICA', 'ELETRICA', 'MOTOR', 'SUSPENSAO', 'PNEUS'] as const
@@ -14,27 +17,29 @@ type Categoria = typeof CATEGORIAS[number]
 
 const LABELS: Record<Categoria, string> = {
   MECANICA: 'Mecânica', ESTETICA: 'Estética', ELETRICA: 'Elétrica',
-  MOTOR: 'Motor', SUSPENSAO: 'Suspensão', PNEUS: 'Pneus'
+  MOTOR: 'Motor',       SUSPENSAO: 'Suspensão', PNEUS: 'Pneus',
 }
 
 const MAX_CATEGORIAS = 3
 
 export default function OnboardingOficina() {
-  const [nome, setNome]         = useState('')
-  const [cnpj, setCnpj]         = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [cep, setCep]           = useState('')
-  const [rua, setRua]           = useState('')
-  const [numero, setNumero]     = useState('')
-  const [bairro, setBairro]     = useState('')
-  const [cidade, setCidade]     = useState('')
-  const [estado, setEstado]     = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [erro, setErro]         = useState('')
+  const [nome,      setNome]      = useState('')
+  const [cnpj,      setCnpj]      = useState('')
+  const [telefone,  setTelefone]  = useState('')
+  const [categorias,setCategorias]= useState<Categoria[]>([])
+  const [cep,       setCep]       = useState('')
+  const [rua,       setRua]       = useState('')
+  const [numero,    setNumero]    = useState('')
+  const [bairro,    setBairro]    = useState('')
+  const [cidade,    setCidade]    = useState('')
+  const [estado,    setEstado]    = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [buscando,  setBuscando]  = useState(false)
+  const [erro,      setErro]      = useState('')
 
-  const { user, updateUser } = useAuth()
-  const router = useRouter()
+  const { user, signIn } = useAuth()
+  const router  = useRouter()
+  const insets  = useSafeAreaInsets()
 
   function toggleCategoria(c: Categoria) {
     setCategorias(prev => {
@@ -47,8 +52,9 @@ export default function OnboardingOficina() {
   async function buscarCep() {
     const cepLimpo = cep.replace(/\D/g, '')
     if (cepLimpo.length !== 8) return
+    setBuscando(true)
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+      const res  = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
       const data = await res.json()
       if (!data.erro) {
         setRua(data.logradouro)
@@ -56,25 +62,25 @@ export default function OnboardingOficina() {
         setCidade(data.localidade)
         setEstado(data.uf)
       }
-    } catch {}
+    } catch {} finally { setBuscando(false) }
   }
 
   async function handleConcluir() {
     if (!nome || categorias.length === 0 || !cep || !rua || !numero || !bairro || !cidade || !estado) {
-      setErro('Preencha todos os campos obrigatórios')
+      setErro('Preencha todos os campos obrigatórios e selecione ao menos uma categoria')
       return
     }
     setErro('')
     setLoading(true)
     try {
-      await api.post('/oficina/onboarding', {
+      const res = await api.post<{ accessToken: string; refreshToken: string }>('/oficina/onboarding', {
         nome,
         cnpj:     cnpj     ? cnpj.replace(/\D/g, '')     : undefined,
         telefone: telefone ? telefone.replace(/\D/g, '') : undefined,
         categorias,
         cep: cep.replace(/\D/g, ''), rua, numero, bairro, cidade, estado,
       })
-      updateUser({ ...user!, role: 'OFICINA' })
+      await signIn(res.accessToken, { ...user!, role: 'OFICINA' }, res.refreshToken)
     } catch (err: any) {
       setErro(err.message ?? 'Não foi possível salvar')
     } finally {
@@ -83,50 +89,80 @@ export default function OnboardingOficina() {
   }
 
   return (
-    <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity onPress={() => router.back()} style={s.voltar}>
-          <Text style={s.voltarTexto}>←</Text>
+    <KeyboardAvoidingView
+      style={s.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingTop: insets.top + Spacing.base }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <TouchableOpacity
+          style={s.voltarBtn}
+          onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={20} color={Colors.primary} />
         </TouchableOpacity>
 
         <Text style={s.titulo}>Conta da{'\n'}sua oficina.</Text>
         <Text style={s.subtitulo}>Esses dados aparecem pros motoristas e ajudam você a ganhar o selo verificado.</Text>
 
-        <Text style={s.secao}>Sobre o negócio</Text>
-        <TextInput style={s.input} placeholder="NOME" placeholderTextColor={Colors.gray} value={nome} onChangeText={setNome} />
-        <TextInput
-          style={s.input}
+        {/* Sobre o negócio */}
+        <View style={s.secaoHeader}>
+          <Ionicons name="business-outline" size={16} color={Colors.textSecondary} />
+          <Text style={s.secaoTitulo}>Sobre o negócio</Text>
+        </View>
+
+        <Input
+          placeholder="Nome da oficina"
+          value={nome}
+          onChangeText={setNome}
+          autoCapitalize="words"
+          returnKeyType="next"
+        />
+        <Input
           placeholder="CNPJ (opcional)"
-          placeholderTextColor={Colors.gray}
           value={cnpj}
           onChangeText={t => setCnpj(formatCnpj(t))}
           keyboardType="number-pad"
+          returnKeyType="next"
         />
-        <TextInput
-          style={s.input}
-          placeholder="TELEFONE (opcional)"
-          placeholderTextColor={Colors.gray}
+        <Input
+          placeholder="Telefone (opcional)"
           value={telefone}
           onChangeText={t => setTelefone(formatCelular(t))}
           keyboardType="phone-pad"
+          returnKeyType="next"
         />
 
-        <Text style={s.secao}>
-          Categoria{' '}
-          <Text style={s.secaoHint}>(máx. {MAX_CATEGORIAS})</Text>
-        </Text>
-        <View style={s.categorias}>
+        {/* Categorias */}
+        <View style={s.secaoHeader}>
+          <Ionicons name="construct-outline" size={16} color={Colors.textSecondary} />
+          <Text style={s.secaoTitulo}>
+            Categorias{'  '}
+            <Text style={s.secaoHint}>selecione até {MAX_CATEGORIAS}</Text>
+          </Text>
+        </View>
+
+        <View style={s.chips}>
           {CATEGORIAS.map(c => {
-            const selecionado = categorias.includes(c)
-            const bloqueado   = !selecionado && categorias.length >= MAX_CATEGORIAS
+            const sel      = categorias.includes(c)
+            const bloqueado = !sel && categorias.length >= MAX_CATEGORIAS
             return (
               <TouchableOpacity
                 key={c}
-                style={[s.chip, selecionado && s.chipSelecionado, bloqueado && s.chipBloqueado]}
+                style={[s.chip, sel && s.chipSel, bloqueado && s.chipBloqueado]}
                 onPress={() => toggleCategoria(c)}
                 disabled={bloqueado}
+                activeOpacity={0.7}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: sel, disabled: bloqueado }}
               >
-                <Text style={[s.chipTexto, selecionado && s.chipTextoSelecionado, bloqueado && s.chipTextoBloqueado]}>
+                {sel && <Ionicons name="checkmark" size={12} color={Colors.surface} style={{ marginRight: 4 }} />}
+                <Text style={[s.chipTexto, sel && s.chipTextoSel]}>
                   {LABELS[c]}
                 </Text>
               </TouchableOpacity>
@@ -134,31 +170,64 @@ export default function OnboardingOficina() {
           })}
         </View>
 
-        <Text style={s.secao}>📍 Endereço</Text>
-        <View style={s.row}>
-          <TextInput
-            style={[s.input, { flex: 1 }]}
-            placeholder="CEP"
-            placeholderTextColor={Colors.gray}
-            value={cep}
-            onChangeText={t => setCep(formatCep(t))}
-            keyboardType="number-pad"
-            onBlur={buscarCep}
-          />
-          <TouchableOpacity style={s.buscarBtn} onPress={buscarCep}>
-            <Text style={s.buscarTexto}>Buscar</Text>
+        {/* Endereço */}
+        <View style={s.secaoHeader}>
+          <Ionicons name="location-outline" size={16} color={Colors.textSecondary} />
+          <Text style={s.secaoTitulo}>Endereço</Text>
+        </View>
+
+        <View style={s.cepRow}>
+          <View style={{ flex: 1 }}>
+            <Input
+              placeholder="CEP"
+              value={cep}
+              onChangeText={t => setCep(formatCep(t))}
+              keyboardType="number-pad"
+              onBlur={buscarCep}
+              returnKeyType="next"
+            />
+          </View>
+          <TouchableOpacity style={s.buscarBtn} onPress={buscarCep} disabled={buscando}>
+            {buscando
+              ? <ActivityIndicator size="small" color={Colors.accent} />
+              : <Text style={s.buscarTexto}>Buscar</Text>}
           </TouchableOpacity>
         </View>
+
         <View style={s.row}>
-          <TextInput style={[s.input, { flex: 2 }]} placeholder="RUA" placeholderTextColor={Colors.gray} value={rua} onChangeText={setRua} />
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="NÚMERO" placeholderTextColor={Colors.gray} value={numero} onChangeText={setNumero} />
+          <View style={{ flex: 2 }}>
+            <Input placeholder="Rua" value={rua} onChangeText={setRua} returnKeyType="next" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Input placeholder="Número" value={numero} onChangeText={setNumero} keyboardType="number-pad" returnKeyType="next" />
+          </View>
         </View>
-        <TextInput style={s.input} placeholder="BAIRRO - CIDADE" placeholderTextColor={Colors.gray} value={bairro ? `${bairro} - ${cidade}` : ''} editable={false} />
 
-        {erro ? <Text style={s.erro}>{erro}</Text> : null}
+        <Input
+          placeholder="Bairro - Cidade"
+          value={bairro && cidade ? `${bairro} - ${cidade}` : ''}
+          editable={false}
+        />
 
-        <TouchableOpacity style={[s.botao, loading && s.botaoDisabled]} onPress={handleConcluir} disabled={loading}>
-          <Text style={s.botaoTexto}>{loading ? 'Salvando...' : 'Concluir →'}</Text>
+        {!!erro && (
+          <View style={s.erroContainer}>
+            <Ionicons name="alert-circle-outline" size={15} color={Colors.error} />
+            <Text style={s.erro}>{erro}</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[s.botao, loading && s.botaoDisabled]}
+          onPress={handleConcluir}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          {loading
+            ? <ActivityIndicator size="small" color={Colors.surface} />
+            : <>
+                <Text style={s.botaoTexto}>Concluir</Text>
+                <Ionicons name="arrow-forward" size={18} color={Colors.surface} />
+              </>}
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -166,27 +235,27 @@ export default function OnboardingOficina() {
 }
 
 const s = StyleSheet.create({
-  container:              { flex: 1, backgroundColor: Colors.background },
-  scroll:                 { padding: 24, paddingTop: 48 },
-  voltar:                 { width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
-  voltarTexto:            { fontSize: 18, color: Colors.text },
-  titulo:                 { fontSize: 32, fontWeight: '800', color: Colors.primary, marginBottom: 8 },
-  subtitulo:              { fontSize: 14, color: Colors.textLight, marginBottom: 24 },
-  secao:                  { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 12, marginTop: 8 },
-  secaoHint:              { fontSize: 12, fontWeight: '400', color: Colors.gray },
-  input:                  { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 12, padding: 14, marginBottom: 10, fontSize: 13, color: Colors.text },
-  row:                    { flexDirection: 'row', gap: 8 },
-  buscarBtn:              { justifyContent: 'center', paddingHorizontal: 16, marginBottom: 10 },
-  buscarTexto:            { color: Colors.accent, fontWeight: '600' },
-  categorias:             { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  chip:                   { borderWidth: 1, borderColor: Colors.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
-  chipSelecionado:        { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipBloqueado:          { opacity: 0.35 },
-  chipTexto:              { fontSize: 13, color: Colors.text },
-  chipTextoSelecionado:   { color: Colors.white },
-  chipTextoBloqueado:     { color: Colors.gray },
-  erro:                   { fontSize: 12, color: Colors.error, marginBottom: 12 },
-  botao:                  { backgroundColor: Colors.accent, borderRadius: 50, padding: 18, alignItems: 'center', marginTop: 16 },
-  botaoDisabled:          { opacity: 0.6 },
-  botaoTexto:             { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  container:     { flex: 1, backgroundColor: Colors.background },
+  scroll:        { paddingHorizontal: Spacing.lg, paddingBottom: Spacing['4xl'] },
+  voltarBtn:     { width: 40, height: 40, borderRadius: Radii.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.xl },
+  titulo:        { fontSize: Typography.size['4xl'], fontWeight: Typography.weight.extrabold, color: Colors.primary, marginBottom: Spacing.xs, lineHeight: Typography.size['4xl'] * 1.15 },
+  subtitulo:     { fontSize: Typography.size.md, color: Colors.textSecondary, marginBottom: Spacing.xl, lineHeight: Typography.size.md * 1.6 },
+  secaoHeader:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.md, marginTop: Spacing.sm },
+  secaoTitulo:   { fontSize: Typography.size.sm, fontWeight: Typography.weight.semibold, color: Colors.textSecondary },
+  secaoHint:     { fontSize: Typography.size.xs, fontWeight: Typography.weight.regular, color: Colors.textMuted },
+  chips:         { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.base },
+  chip:          { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.border, borderRadius: Radii.full, paddingHorizontal: Spacing.base, paddingVertical: Spacing.sm },
+  chipSel:       { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  chipBloqueado: { opacity: 0.35 },
+  chipTexto:     { fontSize: Typography.size.sm, color: Colors.text, fontWeight: Typography.weight.medium },
+  chipTextoSel:  { color: Colors.surface },
+  cepRow:        { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  buscarBtn:     { height: 52, justifyContent: 'center', paddingHorizontal: Spacing.md, marginBottom: Spacing.md },
+  buscarTexto:   { color: Colors.accent, fontWeight: Typography.weight.semibold, fontSize: Typography.size.md },
+  row:           { flexDirection: 'row', gap: Spacing.sm },
+  erroContainer: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: Colors.errorLight, padding: Spacing.sm, borderRadius: Radii.sm, marginBottom: Spacing.md },
+  erro:          { fontSize: Typography.size.sm, color: Colors.error, flex: 1 },
+  botao:         { flexDirection: 'row', backgroundColor: Colors.accent, borderRadius: Radii.full, paddingVertical: Spacing.base + 2, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.base },
+  botaoDisabled: { opacity: 0.6 },
+  botaoTexto:    { color: Colors.surface, fontWeight: Typography.weight.bold, fontSize: Typography.size.base },
 })

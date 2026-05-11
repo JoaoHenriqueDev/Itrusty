@@ -55,12 +55,40 @@ model User {
   fcmToken     String?  @map("fcm_token")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  provider String?
+  provider     String?
 
-  motorista Motorista?
-  oficina   Oficina?
+  motorista     Motorista?
+  oficina       Oficina?
+  refreshTokens RefreshToken[]
+  notificacoes  Notificacao[]
 
   @@map("users")
+}
+
+model Notificacao {
+ id        String   @id @default(uuid())
+ userId    String   @map("user_id")
+ user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ titulo    String
+ corpo     String
+ lida      Boolean  @default(false)
+criadaEm DateTime @default(now()) @map("criada_em")
+ 
+ @@index([userId, lida])
+  @@map("notificacoes")
+ }
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 model Motorista {

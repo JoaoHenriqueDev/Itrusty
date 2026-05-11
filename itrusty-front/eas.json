@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 18.11.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://itrusty-api-production.up.railway.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://cnbwebyofxchxtmfmdnk.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuYndlYnlvZnhjaHh0bWZtZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNDI4NjEsImV4cCI6MjA5MzgxODg2MX0.LnggLyRt9U3vz8z6SSnMqVRjdMPR6W6nwdI2VG1Jpls",
+        "EXPO_PUBLIC_OAUTH_REDIRECT_URL": "http://localhost:8081"
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
