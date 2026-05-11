@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "itrusty-front",
+    "name": "iTrusty",
     "slug": "itrusty-front",
     "scheme": "itrusty",
     "version": "1.0.0",
@@ -11,10 +11,13 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#111827"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "O iTrusty usa sua localização para mostrar as oficinas mais próximas de você."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +26,16 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.itrustyfront"
+      "package": "com.anonymous.itrustyfront",
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "COLE_SUA_GOOGLE_MAPS_API_KEY_AQUI"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,7 +43,14 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      "expo-location"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a0c565e8-0a17-41cc-a950-5c5688a5ca13"
+      }
+    }
   }
 }
