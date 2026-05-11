@@ -5,8 +5,9 @@
   import fastifyRateLimit = require('@fastify/rate-limit')
   import { authRotas } from './modulos/auth/auth.rotas'
 import { motoristaRotas } from './modulos/usuario/motorista.rotas'
-  import { oficinaRotas } from './modulos/oficina/oficina.rotas'
-   import { notificacaoRotas } from './modulos/notificacao/notificacao.rotas'
+import { usuarioRotas } from './modulos/usuario/usuario.rotas'
+import { oficinaRotas } from './modulos/oficina/oficina.rotas'
+import { notificacaoRotas } from './modulos/notificacao/notificacao.rotas'
 
 const app = Fastify({ logger: true })
 
@@ -30,9 +31,10 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('SUPABASE_SERVICE_RO
 app.register(fastifyJwt, { secret: process.env.JWT_SECRET! })
   app.register(fastifyHelmet)
 
-app.register(authRotas, { prefix: '/auth' })
-app.register(motoristaRotas, { prefix: '/motorista' })
-app.register(oficinaRotas,   { prefix: '/oficina' })
+app.register(authRotas,        { prefix: '/auth' })
+app.register(usuarioRotas,     { prefix: '/usuario' })
+app.register(motoristaRotas,   { prefix: '/motorista' })
+app.register(oficinaRotas,     { prefix: '/oficina' })
 app.register(notificacaoRotas, { prefix: '/notificacoes' })
 
 app.get('/health', async () => ({ status: 'ok' }))

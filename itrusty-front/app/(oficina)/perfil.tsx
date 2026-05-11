@@ -118,6 +118,16 @@ export default function PerfilOficina() {
           </View>
         </TouchableOpacity>
 
+        {/* ── Minha conta ── */}
+        <Secao titulo="MINHA CONTA" />
+        <View style={s.menuCard}>
+          <MenuItem
+            icone="person-outline"
+            label="Editar perfil pessoal"
+            onPress={() => navegar('/(oficina)/editar-perfil')}
+          />
+        </View>
+
         {/* ── Minha oficina ── */}
         <Secao titulo="MINHA OFICINA" />
         <View style={s.menuCard}>

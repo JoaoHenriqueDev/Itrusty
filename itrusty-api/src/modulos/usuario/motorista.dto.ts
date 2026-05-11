@@ -13,6 +13,19 @@
     }
   }
 
+  export interface AdicionarVeiculoDTO {
+    marca:  string
+    modelo: string
+    ano:    number
+    placa:  string
+  }
+
+  export interface AtualizarUsuarioDTO {
+    name?:  string
+    email?: string
+    phone?: string
+  }
+
   export interface CriarAgendamentoDTO {
     oficinaId: string
     servicoId: string

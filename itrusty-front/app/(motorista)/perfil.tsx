@@ -84,7 +84,23 @@ export default function PerfilMotorista() {
           </View>
         </View>
 
-        {/* ── Notificações ── */}
+        {/* ── Minha conta ── */}
+        <Secao titulo="MINHA CONTA" />
+        <View style={s.menuCard}>
+          <MenuItem
+            icone="person-outline"
+            label="Editar perfil"
+            onPress={() => router.push('/(motorista)/editar-perfil')}
+          />
+          <Divider />
+          <MenuItem
+            icone="car-outline"
+            label={`Meus veículos${veiculos.length ? ` (${veiculos.length})` : ''}`}
+            onPress={() => router.push('/(motorista)/meus-veiculos')}
+          />
+        </View>
+
+        {/* ── Atividade ── */}
         <Secao titulo="ATIVIDADE" />
         <View style={s.menuCard}>
           <MenuItem
@@ -99,31 +115,6 @@ export default function PerfilMotorista() {
             label="Meus agendamentos"
             onPress={() => router.push('/(motorista)/agendamentos')}
           />
-        </View>
-
-        {/* ── Veículos ── */}
-        <Secao titulo="MEUS VEÍCULOS" />
-        <View style={s.menuCard}>
-          {veiculos.length === 0 ? (
-            <View style={s.menuItem}>
-              <Text style={[s.menuLabel, { color: Colors.textMuted }]}>Nenhum veículo cadastrado</Text>
-            </View>
-          ) : (
-            veiculos.map((v, i) => (
-              <View key={v.id}>
-                {i > 0 && <Divider />}
-                <View style={s.menuItem}>
-                  <View style={s.menuIconBox}>
-                    <Ionicons name="car-outline" size={20} color={Colors.textSecondary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.menuLabel}>{v.marca} {v.modelo} {v.ano}</Text>
-                    <Text style={[s.menuLabel, { fontSize: Typography.size.sm, color: Colors.textMuted }]}>{v.placa}</Text>
-                  </View>
-                </View>
-              </View>
-            ))
-          )}
         </View>
 
         {/* ── Suporte ── */}

@@ -23,8 +23,24 @@ async function getOficinaPorUserId(userId: string) {
 }
 
 async function geocodificarEndereco(
-  cep: string, rua: string, cidade: string, estado: string,
+  cep: string, rua: string, numero: string, cidade: string, estado: string,
 ): Promise<{ lat: number; lng: number } | null> {
+  // 1) Google Geocoding API — mais preciso, usa chave já configurada
+  const googleKey = process.env.GOOGLE_MAPS_API_KEY
+  if (googleKey && rua && cidade) {
+    try {
+      const endereco = `${rua}, ${numero}, ${cidade}, ${estado}, Brasil`
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(endereco)}&key=${googleKey}`
+      const res  = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      const data = await res.json() as { status: string; results: { geometry: { location: { lat: number; lng: number } } }[] }
+      if (data.status === 'OK' && data.results.length) {
+        const loc = data.results[0].geometry.location
+        return { lat: loc.lat, lng: loc.lng }
+      }
+    } catch { /* cai para Nominatim */ }
+  }
+
+  // 2) Nominatim com número incluído (endereço completo)
   const tentar = async (q: string) => {
     const res  = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
@@ -36,6 +52,7 @@ async function geocodificarEndereco(
 
   try {
     return (
+      await tentar(`${rua}, ${numero}, ${cidade}, ${estado}, Brasil`) ??
       await tentar(`${rua}, ${cidade}, ${estado}, Brasil`) ??
       await tentar(`${cidade}, ${estado}, Brasil`) ??
       await tentar(`${cep.replace(/\D/g, '')}, Brasil`)
@@ -43,11 +60,6 @@ async function geocodificarEndereco(
   } catch {
     return null
   }
-}
-
-// mantém compatibilidade com chamadas antigas
-async function geocodificarCep(cep: string): Promise<{ lat: number; lng: number } | null> {
-  return geocodificarEndereco(cep, '', '', '')
 }
 
 // ─── onboarding ──────────────────────────────────────────────────────────────
@@ -79,7 +91,7 @@ export async function onboardingOficina(userId: string, data: OnboardingOficinaD
     })
   })
 
-  const coords = await geocodificarEndereco(data.cep, data.rua, data.cidade, data.estado)
+  const coords = await geocodificarEndereco(data.cep, data.rua, data.numero, data.cidade, data.estado)
   if (coords) {
     await prisma.oficina.update({
       where: { id: oficina.id },
@@ -165,6 +177,7 @@ export async function atualizarPerfil(userId: string, data: AtualizarPerfilDTO) 
     const coords = await geocodificarEndereco(
       data.cep,
       data.rua     ?? atualizada?.rua     ?? '',
+      data.numero  ?? atualizada?.numero  ?? '',
       data.cidade  ?? atualizada?.cidade  ?? '',
       data.estado  ?? atualizada?.estado  ?? '',
     )

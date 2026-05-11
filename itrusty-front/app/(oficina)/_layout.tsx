@@ -49,7 +49,8 @@ export default function OficinaLayout() {
       <Tabs.Screen name="agendamento/[id]" options={{ href: null }} />
       <Tabs.Screen name="servico/[id]"     options={{ href: null }} />
       <Tabs.Screen name="conta"            options={{ href: null }} />
-      <Tabs.Screen name="notificacoes"      options={{ href: null }} />
+      <Tabs.Screen name="editar-perfil"    options={{ href: null }} />
+      <Tabs.Screen name="notificacoes"     options={{ href: null }} />
       <Tabs.Screen name="ajuda"            options={{ href: null }} />
       <Tabs.Screen name="sobre"            options={{ href: null }} />
       <Tabs.Screen name="termos"           options={{ href: null }} />

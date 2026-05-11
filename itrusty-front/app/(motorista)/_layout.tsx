@@ -45,9 +45,11 @@ export default function MotoristaLayout() {
       ))}
 
       {/* Telas de detalhe — sem tab */}
-      <Tabs.Screen name="oficina/[id]"  options={{ href: null }} />
-      <Tabs.Screen name="agendar/[id]"  options={{ href: null }} />
+      <Tabs.Screen name="oficina/[id]"   options={{ href: null }} />
+      <Tabs.Screen name="agendar/[id]"   options={{ href: null }} />
       <Tabs.Screen name="notificacoes"   options={{ href: null }} />
+      <Tabs.Screen name="editar-perfil"  options={{ href: null }} />
+      <Tabs.Screen name="meus-veiculos"  options={{ href: null }} />
     </Tabs>
   )
 }
