@@ -96,10 +96,15 @@ export default function Agendar() {
     return oficina.horarios.find((h) => h.dia === diaSemana) ?? null
   }, [data, oficina])
 
+  const semHorariosConfigurados = !oficina?.horarios?.length
+
   const slotsFiltrados = useMemo(() => {
-    if (!horarioDoDia?.aberto || !horarioDoDia.abertura || !horarioDoDia.fechamento) return []
+    // Sem horários cadastrados → mostra todos (fallback)
+    if (semHorariosConfigurados) return SLOTS
+    // Tem horários mas o dia está fechado
+    if (!horarioDoDia || !horarioDoDia.aberto || !horarioDoDia.abertura || !horarioDoDia.fechamento) return []
     return SLOTS.filter((s) => s >= horarioDoDia.abertura! && s <= horarioDoDia.fechamento!)
-  }, [horarioDoDia])
+  }, [horarioDoDia, semHorariosConfigurados])
 
   const servicoSelecionado = oficina?.servicos.find(s => s.id === servicoId)
   const veiculoSelecionado = veiculos.find(v => v.id === veiculoId)
@@ -228,7 +233,7 @@ export default function Agendar() {
         {data !== '' && (
           <>
             <Text style={s.label}>Horário</Text>
-            {!horarioDoDia || !horarioDoDia.aberto ? (
+            {!semHorariosConfigurados && (!horarioDoDia || !horarioDoDia.aberto) ? (
               <View style={s.fechadoCard}>
                 <Ionicons name="close-circle-outline" size={18} color={Colors.textMuted} />
                 <Text style={s.fechadoTexto}>Oficina fechada neste dia</Text>
