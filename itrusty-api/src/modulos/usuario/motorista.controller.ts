@@ -7,6 +7,7 @@ import {
   buscarDetalheOficina,
   listarAgendamentosMotorista,
   buscarVeiculosMotorista,
+  criarAvaliacao,
 } from './motorista.service'
 import { OnboardingMotoristaDTO, CriarAgendamentoDTO } from './motorista.dto'
 import { gerarTokens } from '../../compartilhado/tokens'
@@ -39,8 +40,8 @@ export async function onboarding(req: FastifyRequest, reply: FastifyReply) {
 
 export async function home(req: FastifyRequest, reply: FastifyReply) {
   try {
-    const { lat, lng, page } = req.query as { lat?: number; lng?: number; page?: number }
-    const oficinas = await buscarOficinas(lat, lng, page ?? 1)
+    const { lat, lng, page, externos } = req.query as { lat?: number; lng?: number; page?: number; externos?: string }
+    const oficinas = await buscarOficinas(lat, lng, page ?? 1, externos !== 'false')
     return reply.send({ oficinas })
   } catch {
     return reply.status(500).send({ error: 'Erro interno' })
@@ -103,6 +104,20 @@ export async function postAgendamento(req: FastifyRequest, reply: FastifyReply) 
       return reply.status(400).send({ error: 'Oficina não atende nesta data' })
     if (err.message === 'HORARIO_INDISPONIVEL')
       return reply.status(409).send({ error: 'Horário indisponível para este serviço' })
+    return reply.status(500).send({ error: 'Erro interno' })
+  }
+}
+
+export async function postAvaliacao(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const id = extrairUserId(req)
+    const { agendamentoId, nota, comentario } = req.body as { agendamentoId: string; nota: number; comentario?: string }
+    await criarAvaliacao(id, agendamentoId, nota, comentario)
+    return reply.status(201).send({ ok: true })
+  } catch (err: any) {
+    if (err.message === 'PERFIL_NAO_ENCONTRADO')    return reply.status(400).send({ error: 'Perfil não encontrado' })
+    if (err.message === 'AGENDAMENTO_NAO_ENCONTRADO') return reply.status(404).send({ error: 'Agendamento não encontrado ou não concluído' })
+    if (err.message === 'JA_AVALIADO')              return reply.status(409).send({ error: 'Este agendamento já foi avaliado' })
     return reply.status(500).send({ error: 'Erro interno' })
   }
 }

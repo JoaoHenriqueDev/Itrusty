@@ -29,11 +29,18 @@ type Oficina = {
 }
 
 type Coords = { lat: number; lng: number }
+type Filtro = 'todas' | 'verificadas' | 'externas'
 
 const LABELS: Record<string, string> = {
   MECANICA: 'Mecânica', ESTETICA: 'Estética', ELETRICA: 'Elétrica',
   MOTOR: 'Motor',       SUSPENSAO: 'Suspensão', PNEUS: 'Pneus',
 }
+
+const CHIPS: { valor: Filtro; label: string }[] = [
+  { valor: 'todas',       label: 'Todas' },
+  { valor: 'verificadas', label: 'Verificadas' },
+  { valor: 'externas',    label: 'Não verificadas' },
+]
 
 export default function HomeMotorista() {
   const { user } = useAuth()
@@ -45,23 +52,38 @@ export default function HomeMotorista() {
   const [loading,       setLoading]       = useState(true)
   const [refresh,       setRefresh]       = useState(false)
   const [busca,         setBusca]         = useState('')
+  const [filtro,        setFiltro]        = useState<Filtro>('todas')
   const [coords,        setCoords]        = useState<Coords | null>(null)
   const [bairroAtual,   setBairroAtual]   = useState<string>('')
   const [locPermissao,  setLocPermissao]  = useState<'carregando' | 'ok' | 'negado'>('carregando')
 
   const carregar = useCallback(async (c?: Coords | null, isRefresh = false) => {
     if (isRefresh) setRefresh(true)
+    const loc = c ?? coords
+    const params: Record<string, string | number> = {}
+    if (loc) { params.lat = loc.lat; params.lng = loc.lng }
+
     try {
-      const params: Record<string, string | number> = {}
-      const loc = c ?? coords
-      if (loc) { params.lat = loc.lat; params.lng = loc.lng }
-      const res = await api.get<{ oficinas: { data: Oficina[] } }>('/motorista/home', params)
-      setOficinas(res.oficinas?.data ?? [])
-    } catch {
-      setOficinas([])
-    } finally {
+      // Fase 1: só DB (~100ms) — exibe imediatamente
+      const res1 = await api.get<{ oficinas: { data: Oficina[] } }>('/motorista/home', { ...params, externos: 'false' })
+      setOficinas(res1.oficinas?.data ?? [])
       setLoading(false)
       setRefresh(false)
+    } catch {
+      setOficinas([])
+      setLoading(false)
+      setRefresh(false)
+      return
+    }
+
+    // Fase 2: inclui externos OSM em background (só com localização)
+    if (loc) {
+      try {
+        const res2 = await api.get<{ oficinas: { data: Oficina[] } }>('/motorista/home', params)
+        setOficinas(res2.oficinas?.data ?? [])
+      } catch {
+        // mantém resultado da fase 1
+      }
     }
   }, [coords])
 
@@ -96,13 +118,16 @@ export default function HomeMotorista() {
   useEffect(() => { pedirLocalizacao() }, [])
 
   const filtradas = useMemo(() => {
-    if (!busca.trim()) return oficinas
+    let lista = oficinas
+    if (filtro === 'verificadas') lista = lista.filter(o => o.tipo === 'INTERNO')
+    else if (filtro === 'externas') lista = lista.filter(o => o.tipo === 'EXTERNO')
+    if (!busca.trim()) return lista
     const q = busca.toLowerCase()
-    return oficinas.filter(o =>
+    return lista.filter(o =>
       o.nome.toLowerCase().includes(q) ||
       o.categorias.some(c => LABELS[c]?.toLowerCase().includes(q))
     )
-  }, [oficinas, busca])
+  }, [oficinas, busca, filtro])
 
   function renderOficina({ item }: { item: Oficina }) {
     const externo = item.tipo === 'EXTERNO'
@@ -139,9 +164,14 @@ export default function HomeMotorista() {
         <View style={s.info}>
           <View style={s.nomeRow}>
             <Text style={s.nome} numberOfLines={1}>{item.nome}</Text>
-            {externo && (
+            {externo ? (
               <View style={s.externoTag}>
                 <Text style={s.externoTagTexto}>Não verificado</Text>
+              </View>
+            ) : (
+              <View style={s.seloVerificado}>
+                <Ionicons name="checkmark-circle" size={11} color={Colors.accent} />
+                <Text style={s.seloTexto}>Verificado iTrusty</Text>
               </View>
             )}
           </View>
@@ -204,6 +234,22 @@ export default function HomeMotorista() {
         />
       </View>
 
+      {/* Chips de filtro */}
+      <View style={s.chipsRow}>
+        {CHIPS.map(chip => (
+          <TouchableOpacity
+            key={chip.valor}
+            style={[s.chip, filtro === chip.valor && s.chipAtivo]}
+            onPress={() => setFiltro(chip.valor)}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.chipTexto, filtro === chip.valor && s.chipTextoAtivo]}>
+              {chip.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* Lista */}
       {loading ? (
         <View style={s.skeletonWrap}>
@@ -252,9 +298,14 @@ const s = StyleSheet.create({
   badge:          { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: Colors.error, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.surface },
   badgeTexto:     { fontSize: 10, fontWeight: Typography.weight.bold, color: Colors.surface },
   titulo:         { fontSize: Typography.size['2xl'], fontWeight: Typography.weight.extrabold, color: Colors.primary, marginBottom: Spacing.lg, paddingHorizontal: Spacing.lg, lineHeight: Typography.size['2xl'] * 1.35 },
-  buscaContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: Radii.full, marginHorizontal: Spacing.lg, marginBottom: Spacing.base, paddingHorizontal: Spacing.base },
+  buscaContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: Radii.full, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm, paddingHorizontal: Spacing.base },
   buscaIcon:      { marginRight: Spacing.sm },
   buscaInput:     { flex: 1, fontSize: Typography.size.md, color: Colors.text, paddingVertical: Spacing.md },
+  chipsRow:       { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.lg, marginBottom: Spacing.base },
+  chip:           { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: Radii.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
+  chipAtivo:      { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  chipTexto:      { fontSize: Typography.size.sm, color: Colors.textSecondary, fontWeight: Typography.weight.medium },
+  chipTextoAtivo: { color: Colors.surface },
   skeletonWrap:   { paddingHorizontal: Spacing.lg },
   lista:          { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   contador:       { fontSize: Typography.size.xs, color: Colors.textMuted, letterSpacing: 1, marginBottom: Spacing.md },
@@ -266,6 +317,8 @@ const s = StyleSheet.create({
   nome:           { fontSize: Typography.size.base, fontWeight: Typography.weight.bold, color: Colors.primary, flexShrink: 1 },
   externoTag:     { backgroundColor: Colors.background, borderRadius: Radii.full, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: Colors.border },
   externoTagTexto:{ fontSize: 9, color: Colors.textMuted, fontWeight: Typography.weight.medium },
+  seloVerificado: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  seloTexto:      { fontSize: 9, color: Colors.accent, fontWeight: Typography.weight.semibold },
   categorias:     { fontSize: Typography.size.sm, color: Colors.textSecondary },
   distancia:      { fontSize: Typography.size.xs, color: Colors.textMuted },
 })
