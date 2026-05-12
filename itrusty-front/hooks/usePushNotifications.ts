@@ -5,6 +5,7 @@ import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { api } from '../services/api'
 import { getSecure, saveSecure } from '../utils/storage'
+import { useAuth } from '../contexts/AuthContext'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -55,6 +56,8 @@ async function registrarToken() {
 }
 
 export function usePushNotifications(onTap?: () => void) {
+  const { token: jwtToken } = useAuth()
+
   // Ref garante que o callback sempre usa a versão mais recente (sem closure stale)
   const onTapRef = useRef(onTap)
   const notifListener    = useRef<Notifications.EventSubscription>()
@@ -64,9 +67,12 @@ export function usePushNotifications(onTap?: () => void) {
     onTapRef.current = onTap
   }, [onTap])
 
+  // Re-registra o token sempre que o usuário faz login (jwtToken muda de null → valor)
   useEffect(() => {
-    registrarToken()
+    if (jwtToken) registrarToken()
+  }, [jwtToken])
 
+  useEffect(() => {
     notifListener.current = Notifications.addNotificationReceivedListener(() => {})
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
