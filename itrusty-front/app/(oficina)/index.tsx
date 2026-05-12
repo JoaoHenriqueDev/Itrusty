@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../services/api'
@@ -67,7 +67,7 @@ export default function HomeOficina() {
     }
   }, [])
 
-  useEffect(() => { carregar() }, [carregar])
+  useFocusEffect(useCallback(() => { carregar() }, [carregar]))
 
   async function handleAceitar(id: string) {
     setAcao(id)

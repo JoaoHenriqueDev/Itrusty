@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../../services/api'
 import { Colors, Spacing, Typography, Radii, Shadows } from '../../../constants/theme'
+import { useAppAlert } from '../../../components/ui/AppAlert'
 
 type Detalhe = {
   id:            string
@@ -41,6 +42,7 @@ export default function DetalheAgendamento() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
 
+  const { alert } = useAppAlert()
   const [ag,      setAg]      = useState<Detalhe | null>(null)
   const [loading, setLoading] = useState(true)
   const [acao,    setAcao]    = useState(false)
@@ -73,7 +75,9 @@ export default function DetalheAgendamento() {
     try {
       await api.patch(`/oficina/agendamentos/${id}/finalizar`, {})
       router.navigate('/(oficina)/' as any)
-    } catch {} finally { setAcao(false) }
+    } catch (err: any) {
+      alert('Erro', err.message ?? 'Não foi possível finalizar o serviço.')
+    } finally { setAcao(false) }
   }
 
   if (loading || !ag) {
