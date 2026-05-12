@@ -11,6 +11,7 @@ import { Colors, Spacing, Typography, Radii, Shadows } from '../../constants/the
 import { EmptyState } from '../../components/ui/EmptyState'
 import { SkeletonRow } from '../../components/ui/SkeletonCard'
 import { StarRating } from '../../components/ui/StarRating'
+import { useAppAlert } from '../../components/ui/AppAlert'
 
 type Agendamento = {
   id:            string
@@ -44,10 +45,31 @@ function formatPreco(v: number) {
 export default function Agendamentos() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { confirm } = useAppAlert()
 
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
   const [loading,      setLoading]      = useState(true)
   const [refresh,      setRefresh]      = useState(false)
+  const [cancelando,   setCancelando]   = useState<string | null>(null)
+
+  function handleCancelar(ag: Agendamento) {
+    confirm(
+      'Cancelar agendamento?',
+      `${ag.servico.nome} na ${ag.oficina.nome} em ${formatData(ag.dataServico)}.`,
+      async () => {
+        setCancelando(ag.id)
+        try {
+          await api.patch(`/motorista/agendamentos/${ag.id}/cancelar`, {})
+          setAgendamentos(prev =>
+            prev.map(a => a.id === ag.id ? { ...a, status: 'CANCELADO' } : a)
+          )
+        } catch {} finally {
+          setCancelando(null)
+        }
+      },
+      { confirmText: 'Sim, cancelar', destructive: true },
+    )
+  }
 
   // modal de avaliação
   const [modalAg,    setModalAg]    = useState<Agendamento | null>(null)
@@ -156,6 +178,18 @@ export default function Agendamentos() {
                 </TouchableOpacity>
               )
           )}
+          {(item.status === 'AGUARDANDO' || item.status === 'CONFIRMADO') && (
+            <TouchableOpacity
+              style={s.cancelarBtn}
+              onPress={() => handleCancelar(item)}
+              disabled={cancelando === item.id}
+              activeOpacity={0.75}
+            >
+              {cancelando === item.id
+                ? <ActivityIndicator size="small" color={Colors.error} />
+                : <Text style={s.cancelarBtnTexto}>Cancelar</Text>}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     )
@@ -253,6 +287,8 @@ const s = StyleSheet.create({
   preco:           { fontSize: Typography.size.base, fontWeight: Typography.weight.extrabold, color: Colors.primary },
   avaliarBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accentLight, borderRadius: Radii.full, paddingHorizontal: Spacing.sm, paddingVertical: 5 },
   avaliarBtnTexto: { fontSize: Typography.size.xs, fontWeight: Typography.weight.bold, color: Colors.accent },
+  cancelarBtn:     { borderWidth: 1, borderColor: Colors.error, borderRadius: Radii.full, paddingHorizontal: Spacing.md, paddingVertical: 5, minWidth: 72, alignItems: 'center' },
+  cancelarBtnTexto:{ fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: Colors.error },
 })
 
 const m = StyleSheet.create({
