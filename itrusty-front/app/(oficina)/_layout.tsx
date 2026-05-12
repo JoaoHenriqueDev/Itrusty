@@ -46,6 +46,7 @@ export default function OficinaLayout() {
       ))}
 
       {/* Telas de detalhe — sem tab */}
+      <Tabs.Screen name="faturamento"       options={{ href: null }} />
       <Tabs.Screen name="agendamento/[id]" options={{ href: null }} />
       <Tabs.Screen name="servico/[id]"     options={{ href: null }} />
       <Tabs.Screen name="conta"            options={{ href: null }} />

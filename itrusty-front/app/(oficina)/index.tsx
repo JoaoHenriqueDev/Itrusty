@@ -122,12 +122,17 @@ export default function HomeOficina() {
         ) : (
           <>
             <View style={s.metricas}>
-              <View style={[s.metrica, s.metricaLarga]}>
+              <TouchableOpacity
+                style={[s.metrica, s.metricaLarga]}
+                onPress={() => router.push('/(oficina)/faturamento' as any)}
+                activeOpacity={0.8}
+              >
                 <Text style={s.metricaLabel}>Faturamento</Text>
                 <Text style={s.metricaValor}>
                   R$ {(dados?.faturamento ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </Text>
-              </View>
+                <Text style={s.metricaDetalhe}>Ver detalhes →</Text>
+              </TouchableOpacity>
               <View style={[s.metrica, s.metricaCompacta]}>
                 <Text style={s.metricaLabel}>Atendimentos</Text>
                 <Text style={s.metricaValorGrande}>{dados?.atendimentos ?? 0}</Text>
@@ -231,6 +236,7 @@ const s = StyleSheet.create({
   metricaLabel:      { fontSize: Typography.size.xs, color: 'rgba(255,255,255,0.6)', marginBottom: Spacing.sm },
   metricaValor:      { fontSize: Typography.size.xl, fontWeight: Typography.weight.extrabold, color: Colors.surface },
   metricaValorGrande:{ fontSize: Typography.size['4xl'], fontWeight: Typography.weight.extrabold, color: Colors.surface },
+  metricaDetalhe:    { fontSize: Typography.size.xs, color: 'rgba(255,255,255,0.5)', marginTop: Spacing.xs },
 
   secao:             { fontSize: Typography.size.xs, color: Colors.textMuted, letterSpacing: 0.8, marginBottom: Spacing.sm, marginTop: Spacing.xs },
 
