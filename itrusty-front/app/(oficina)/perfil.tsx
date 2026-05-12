@@ -138,6 +138,12 @@ export default function PerfilOficina() {
           />
           <Divider />
           <MenuItem
+            icone="star-outline"
+            label="Avaliações"
+            onPress={() => navegar('/(oficina)/avaliacoes')}
+          />
+          <Divider />
+          <MenuItem
             icone="time-outline"
             label="Horários de funcionamento"
             onPress={() => navegar('/(oficina)/conta')}

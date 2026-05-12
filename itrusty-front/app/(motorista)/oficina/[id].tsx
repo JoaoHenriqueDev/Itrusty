@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons'
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps'
 import { api } from '../../../services/api'
 import { Colors, Spacing, Typography, Radii, Shadows } from '../../../constants/theme'
+import { StarRating } from '../../../components/ui/StarRating'
 
 type Servico = {
   id: string; nome: string; descricao: string | null
@@ -21,6 +22,7 @@ type Oficina = {
   id: string; nome: string; fotoUrl: string | null; telefone: string | null
   categorias: string[]; rua: string; numero: string; bairro: string
   cidade: string; estado: string; latitude: number | null; longitude: number | null
+  mediaAvaliacao: number | null; totalAvaliacoes: number
   servicos: Servico[]; horarios: Horario[]
 }
 
@@ -117,8 +119,16 @@ export default function DetalheOficina() {
         </View>
 
         <View style={s.content}>
-          {/* Nome e categorias */}
+          {/* Nome, rating e categorias */}
           <Text style={s.nome}>{oficina.nome}</Text>
+          {oficina.mediaAvaliacao !== null && (
+            <View style={s.ratingRow}>
+              <StarRating nota={Math.round(oficina.mediaAvaliacao)} tamanho={14} />
+              <Text style={s.ratingTexto}>
+                {oficina.mediaAvaliacao.toFixed(1)} ({oficina.totalAvaliacoes} {oficina.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'})
+              </Text>
+            </View>
+          )}
           <View style={s.chips}>
             {oficina.categorias.map(c => (
               <View key={c} style={s.chip}>
@@ -254,7 +264,9 @@ const s = StyleSheet.create({
   foto:            { width: '100%', height: '100%' },
   fotoPlaceholder: { backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
   content:         { padding: Spacing.lg },
-  nome:            { fontSize: Typography.size['2xl'], fontWeight: Typography.weight.extrabold, color: Colors.primary, marginBottom: Spacing.sm },
+  nome:            { fontSize: Typography.size['2xl'], fontWeight: Typography.weight.extrabold, color: Colors.primary, marginBottom: Spacing.xs },
+  ratingRow:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.sm },
+  ratingTexto:     { fontSize: Typography.size.sm, color: Colors.textSecondary },
   chips:           { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, marginBottom: Spacing.base },
   chip:            { backgroundColor: Colors.accentLight, borderRadius: Radii.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
   chipTexto:       { fontSize: Typography.size.xs, color: Colors.accentDark, fontWeight: Typography.weight.semibold },
