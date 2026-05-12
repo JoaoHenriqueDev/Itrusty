@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../services/api'
+import { useAppAlert } from '../components/ui/AppAlert'
 
 const ORANGE = '#f97316'
 const DARK = '#0f172a'
@@ -30,6 +30,7 @@ export default function ResetSenha() {
   const [password, setPassword]         = useState('')
   const [confirmPassword, setConfirm]   = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const { alert } = useAppAlert()
   const [loading, setLoading]           = useState(false)
   const [sucesso, setSucesso]           = useState(false)
 
@@ -44,7 +45,7 @@ export default function ResetSenha() {
       await api.post('/conta/redefinir-senha', { token, password })
       setSucesso(true)
     } catch (err: any) {
-      Alert.alert(
+      alert(
         'Erro',
         err.message === 'Link inválido ou expirado. Solicite um novo.'
           ? 'Este link expirou ou já foi utilizado. Solicite um novo no aplicativo.'

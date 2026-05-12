@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, TextInput,
+  ActivityIndicator, TextInput,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../../services/api'
 import { Colors, Spacing, Typography, Radii, Shadows } from '../../../constants/theme'
+import { useAppAlert } from '../../../components/ui/AppAlert'
 
 type Servico  = { id: string; nome: string; duracaoMinutos: number; preco: number }
 type Veiculo  = { id: string; marca: string; modelo: string; ano: number; placa: string }
@@ -63,6 +64,7 @@ export default function Agendar() {
   const { id: oficinaId, servicoId: servicoIdParam } = useLocalSearchParams<{ id: string; servicoId?: string }>()
   const router  = useRouter()
   const insets  = useSafeAreaInsets()
+  const { alert } = useAppAlert()
 
   const [oficina,     setOficina]     = useState<Oficina | null>(null)
   const [veiculos,    setVeiculos]    = useState<Veiculo[]>([])
@@ -85,7 +87,7 @@ export default function Agendar() {
         setVeiculos(vRes.veiculos ?? [])
         if (vRes.veiculos?.length === 1) setVeiculoId(vRes.veiculos[0].id)
       })
-      .catch(() => Alert.alert('Erro', 'Não foi possível carregar os dados.'))
+      .catch(() => alert('Erro', 'Não foi possível carregar os dados.'))
       .finally(() => setLoadingInit(false))
   }, [])
 
@@ -124,16 +126,16 @@ export default function Agendar() {
         horaInicio:  hora,
         observacao:  observacao.trim() || undefined,
       })
-      Alert.alert(
+      alert(
         'Agendamento enviado!',
         'Aguarde a confirmação da oficina. Você verá o status na aba Agendamentos.',
-        [{ text: 'Ok', onPress: () => router.replace('/(motorista)/agendamentos') }],
+        () => router.replace('/(motorista)/agendamentos'),
       )
     } catch (err: any) {
       const msg = err.message === 'Horário indisponível para este serviço'
         ? 'Esse horário já está ocupado. Escolha outro.'
         : (err.message ?? 'Não foi possível criar o agendamento.')
-      Alert.alert('Ops!', msg)
+      alert('Ops!', msg)
     } finally {
       setEnviando(false)
     }

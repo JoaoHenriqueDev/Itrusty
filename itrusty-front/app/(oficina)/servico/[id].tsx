@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  StyleSheet, Switch, ActivityIndicator, Alert, Platform,
+  StyleSheet, Switch, ActivityIndicator, Platform,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../../contexts/AuthContext'
 import { api } from '../../../services/api'
 import { Colors, Spacing, Typography, Radii } from '../../../constants/theme'
+import { useAppAlert } from '../../../components/ui/AppAlert'
 import { AppHeader } from '../../../components/ui/AppHeader'
 import { useOficina } from '../../../hooks/useOficina'
 
@@ -27,6 +28,7 @@ export default function EditarServico() {
   const { user }  = useAuth()
   const insets    = useSafeAreaInsets()
   const { oficina } = useOficina()
+  const { confirm } = useAppAlert()
   const novo      = id === 'novo'
 
   const [nome,      setNome]      = useState('')
@@ -112,13 +114,11 @@ export default function EditarServico() {
       }
       return
     }
-    Alert.alert(
+    confirm(
       'Excluir serviço',
       'Tem certeza? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Excluir',  style: 'destructive', onPress: excluir },
-      ]
+      excluir,
+      { confirmText: 'Excluir', destructive: true },
     )
   }
 

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import SplashScreen from '../components/SplashScreen'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { AppAlertProvider } from '../components/ui/AppAlert'
 
 function RootLayoutNav() {
   const { token, user, loading } = useAuth()
@@ -54,8 +55,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <AppAlertProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </AppAlertProvider>
   )
 }

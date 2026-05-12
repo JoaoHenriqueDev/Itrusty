@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   View, Text, TextInput, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { Colors, Spacing, Typography, Radii } from '../../constants/theme'
+import { useAppAlert } from '../../components/ui/AppAlert'
 
 type PerfilData = { id: string; name: string; email: string; phone: string | null; role: string | null }
 
@@ -16,6 +17,7 @@ export default function EditarPerfilOficina() {
   const router  = useRouter()
   const insets  = useSafeAreaInsets()
   const { user, updateUser } = useAuth()
+  const { alert } = useAppAlert()
 
   const [loading,  setLoading]  = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -30,12 +32,12 @@ export default function EditarPerfilOficina() {
         setEmail(res.email ?? '')
         setPhone(res.phone ?? '')
       })
-      .catch(() => Alert.alert('Erro', 'Não foi possível carregar seus dados.'))
+      .catch(() => alert('Erro', 'Não foi possível carregar seus dados.'))
       .finally(() => setLoading(false))
   }, [])
 
   async function salvar() {
-    if (!name.trim()) return Alert.alert('Atenção', 'O nome não pode estar vazio.')
+    if (!name.trim()) { alert('Atenção', 'O nome não pode estar vazio.'); return }
     setSalvando(true)
     try {
       const res = await api.patch<{ user: PerfilData }>('/usuario/perfil', {
@@ -44,9 +46,9 @@ export default function EditarPerfilOficina() {
         phone: phone.trim() || undefined,
       })
       updateUser({ id: res.user.id, name: res.user.name, role: user?.role ?? null })
-      Alert.alert('Salvo!', 'Seus dados foram atualizados.', [{ text: 'Ok', onPress: () => router.navigate('/(oficina)/perfil' as any) }])
+      alert('Salvo!', 'Seus dados foram atualizados.', () => router.navigate('/(oficina)/perfil' as any))
     } catch (err: any) {
-      Alert.alert('Erro', err.message ?? 'Não foi possível salvar.')
+      alert('Erro', err.message ?? 'Não foi possível salvar.')
     } finally {
       setSalvando(false)
     }

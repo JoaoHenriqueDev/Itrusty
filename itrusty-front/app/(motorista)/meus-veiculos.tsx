@@ -1,13 +1,14 @@
 import { useCallback, useState } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator,
+  TextInput, ActivityIndicator,
 } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../services/api'
 import { Colors, Spacing, Typography, Radii, Shadows } from '../../constants/theme'
+import { useAppAlert } from '../../components/ui/AppAlert'
 
 type Veiculo = { id: string; marca: string; modelo: string; ano: number; placa: string }
 
@@ -16,6 +17,7 @@ const ANO_ATUAL = new Date().getFullYear()
 export default function MeusVeiculos() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { alert, confirm } = useAppAlert()
 
   const [veiculos,   setVeiculos]   = useState<Veiculo[]>([])
   const [loading,    setLoading]    = useState(true)
@@ -49,13 +51,13 @@ export default function MeusVeiculos() {
   async function salvarVeiculo() {
     const anoNum = parseInt(ano)
     if (!marca.trim() || !modelo.trim() || !ano || !placa.trim()) {
-      return Alert.alert('Atenção', 'Preencha todos os campos.')
+      alert('Atenção', 'Preencha todos os campos.'); return
     }
     if (isNaN(anoNum) || anoNum < 1950 || anoNum > ANO_ATUAL + 1) {
-      return Alert.alert('Atenção', `Ano inválido. Use entre 1950 e ${ANO_ATUAL + 1}.`)
+      alert('Atenção', `Ano inválido. Use entre 1950 e ${ANO_ATUAL + 1}.`); return
     }
     if (placa.replace(/[^a-zA-Z0-9]/g, '').length < 7) {
-      return Alert.alert('Atenção', 'Placa inválida.')
+      alert('Atenção', 'Placa inválida.'); return
     }
 
     setSalvando(true)
@@ -69,7 +71,7 @@ export default function MeusVeiculos() {
       await carregar()
       limparForm()
     } catch (err: any) {
-      Alert.alert('Erro', err.message ?? 'Não foi possível adicionar o veículo.')
+      alert('Erro', err.message ?? 'Não foi possível adicionar o veículo.')
     } finally {
       setSalvando(false)
     }
@@ -77,25 +79,20 @@ export default function MeusVeiculos() {
 
   async function excluir(veiculo: Veiculo) {
     if (veiculos.length <= 1) {
-      return Alert.alert('Atenção', 'Você precisa ter ao menos um veículo cadastrado.')
+      alert('Atenção', 'Você precisa ter ao menos um veículo cadastrado.'); return
     }
-    Alert.alert(
+    confirm(
       'Remover veículo',
       `Remover ${veiculo.marca} ${veiculo.modelo} (${veiculo.placa})?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover', style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/usuario/veiculos/${veiculo.id}`)
-              setVeiculos(prev => prev.filter(v => v.id !== veiculo.id))
-            } catch (err: any) {
-              Alert.alert('Erro', err.message ?? 'Não foi possível remover.')
-            }
-          },
-        },
-      ],
+      async () => {
+        try {
+          await api.delete(`/usuario/veiculos/${veiculo.id}`)
+          setVeiculos(prev => prev.filter(v => v.id !== veiculo.id))
+        } catch (err: any) {
+          alert('Erro', err.message ?? 'Não foi possível remover.')
+        }
+      },
+      { confirmText: 'Remover', destructive: true },
     )
   }
 

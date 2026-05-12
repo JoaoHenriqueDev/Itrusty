@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  StyleSheet, Switch, ActivityIndicator, Image, Platform, Alert,
+  StyleSheet, Switch, ActivityIndicator, Image, Platform,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -14,6 +14,7 @@ import { AppHeader } from '../../components/ui/AppHeader'
 import { useNotificacoes } from '../../hooks/useNotificacoes'
 import { NotificacaoBanner } from '../../components/NotificacaoBanner'
 import { invalidarCacheOficina } from '../../hooks/useOficina'
+import { useAppAlert } from '../../components/ui/AppAlert'
 import * as ImagePicker from 'expo-image-picker'
 
 type GrupoDia = {
@@ -56,6 +57,7 @@ export default function ContaOficina() {
   const [uploadando,  setUploadando]  = useState(false)
   const [erro,        setErro]        = useState('')
 
+  const { alert } = useAppAlert()
   const primeiraNotif = notificacoes[0]
 
   useEffect(() => {
@@ -159,7 +161,7 @@ export default function ContaOficina() {
     }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('Permissão necessária', 'Permita o acesso à galeria nas configurações do celular.')
+      alert('Permissão necessária', 'Permita o acesso à galeria nas configurações do celular.')
       return
     }
     const result = await ImagePicker.launchImageLibraryAsync({
