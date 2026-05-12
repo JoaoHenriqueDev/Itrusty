@@ -103,7 +103,9 @@ export default function Agendar() {
     if (semHorariosConfigurados) return SLOTS
     // Tem horários mas o dia está fechado
     if (!horarioDoDia || !horarioDoDia.aberto || !horarioDoDia.abertura || !horarioDoDia.fechamento) return []
-    return SLOTS.filter((s) => s >= horarioDoDia.abertura! && s <= horarioDoDia.fechamento!)
+    const ab = horarioDoDia.abertura!.split(':').map((v, i) => i === 0 ? v.padStart(2, '0') : v).join(':')
+    const fe = horarioDoDia.fechamento!.split(':').map((v, i) => i === 0 ? v.padStart(2, '0') : v).join(':')
+    return SLOTS.filter((s) => s >= ab && s <= fe)
   }, [horarioDoDia, semHorariosConfigurados])
 
   const servicoSelecionado = oficina?.servicos.find(s => s.id === servicoId)

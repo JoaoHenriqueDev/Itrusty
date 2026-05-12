@@ -90,6 +90,12 @@ export default function ContaOficina() {
     setGrupos(prev => prev.map((g, i) => i === idx ? { ...g, ...patch } : g))
   }
 
+  function normalizarHora(hora: string): string {
+    if (!hora) return hora
+    const [h, m] = hora.split(':')
+    return `${h.padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}`
+  }
+
   async function uploadBase64(base64: string, mimeType: string) {
     setUploadando(true)
     setErro('')
@@ -180,8 +186,8 @@ export default function ContaOficina() {
         g.dias.map(dia => ({
           dia,
           aberto:     g.aberto,
-          abertura:   g.aberto ? g.abertura : '',
-          fechamento: g.aberto ? g.fechamento : '',
+          abertura:   g.aberto ? normalizarHora(g.abertura) : '',
+          fechamento: g.aberto ? normalizarHora(g.fechamento) : '',
         }))
       )
       await api.patch('/oficina/perfil', {
