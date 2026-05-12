@@ -22,6 +22,10 @@ type Oficina = {
   fotoUrl:     string | null
   categorias:  string[]
   distanciaKm: number | null
+  tipo:        'INTERNO' | 'EXTERNO'
+  telefone?:   string | null
+  latitude?:   number | null
+  longitude?:  number | null
 }
 
 type Coords = { lat: number; lng: number }
@@ -101,28 +105,53 @@ export default function HomeMotorista() {
   }, [oficinas, busca])
 
   function renderOficina({ item }: { item: Oficina }) {
+    const externo = item.tipo === 'EXTERNO'
+
+    function navegar() {
+      if (externo) {
+        router.push({
+          pathname: '/(motorista)/oficina-externa',
+          params: {
+            nome:     item.nome,
+            telefone: item.telefone ?? '',
+            lat:      String(item.latitude ?? ''),
+            lng:      String(item.longitude ?? ''),
+          },
+        })
+      } else {
+        router.push({ pathname: '/(motorista)/oficina/[id]', params: { id: item.id } })
+      }
+    }
+
     return (
       <TouchableOpacity
         style={s.card}
         activeOpacity={0.75}
-        onPress={() => router.push({ pathname: '/(motorista)/oficina/[id]', params: { id: item.id } })}
+        onPress={navegar}
         accessibilityRole="button"
         accessibilityLabel={`Ver detalhes de ${item.nome}`}
       >
-        <View style={s.foto}>
-          {item.fotoUrl
+        <View style={[s.foto, externo && s.fotoExterno]}>
+          {!externo && item.fotoUrl
             ? <Image source={{ uri: item.fotoUrl }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
-            : <Ionicons name="storefront-outline" size={28} color={Colors.surface} />}
+            : <Ionicons name="storefront-outline" size={28} color={externo ? Colors.textMuted : Colors.surface} />}
         </View>
         <View style={s.info}>
-          <Text style={s.nome} numberOfLines={1}>{item.nome}</Text>
+          <View style={s.nomeRow}>
+            <Text style={s.nome} numberOfLines={1}>{item.nome}</Text>
+            {externo && (
+              <View style={s.externoTag}>
+                <Text style={s.externoTagTexto}>Não verificado</Text>
+              </View>
+            )}
+          </View>
           <Text style={s.categorias} numberOfLines={1}>
-            {item.categorias.map(c => LABELS[c] ?? c).join(' · ')}
+            {item.categorias.length > 0
+              ? item.categorias.map(c => LABELS[c] ?? c).join(' · ')
+              : 'Oficina mecânica'}
           </Text>
           <Text style={s.distancia}>
-            {item.distanciaKm !== null
-              ? `${item.distanciaKm} km · ${item.cidade ?? ''}`
-              : item.cidade ?? ''}
+            {item.distanciaKm !== null ? `${item.distanciaKm} km` : item.cidade ?? ''}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
@@ -231,8 +260,12 @@ const s = StyleSheet.create({
   contador:       { fontSize: Typography.size.xs, color: Colors.textMuted, letterSpacing: 1, marginBottom: Spacing.md },
   card:           { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: Radii.lg, padding: Spacing.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border, ...Shadows.sm },
   foto:           { width: 68, height: 68, backgroundColor: Colors.primary, borderRadius: Radii.md, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, overflow: 'hidden' },
+  fotoExterno:    { backgroundColor: Colors.border },
   info:           { flex: 1, gap: 3 },
-  nome:           { fontSize: Typography.size.base, fontWeight: Typography.weight.bold, color: Colors.primary },
+  nomeRow:        { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, flexWrap: 'wrap' },
+  nome:           { fontSize: Typography.size.base, fontWeight: Typography.weight.bold, color: Colors.primary, flexShrink: 1 },
+  externoTag:     { backgroundColor: Colors.background, borderRadius: Radii.full, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: Colors.border },
+  externoTagTexto:{ fontSize: 9, color: Colors.textMuted, fontWeight: Typography.weight.medium },
   categorias:     { fontSize: Typography.size.sm, color: Colors.textSecondary },
   distancia:      { fontSize: Typography.size.xs, color: Colors.textMuted },
 })
