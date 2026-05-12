@@ -28,23 +28,27 @@ function formatDuracao(min: number) {
   return m ? `${h}h${m}min` : `${h}h`
 }
 
-// Gera os próximos N dias (excluindo hoje) no formato YYYY-MM-DD
+// Gera os próximos N dias (incluindo hoje) no formato YYYY-MM-DD
 function gerarDatas(qtd = 14): { label: string; valor: string; diaSemana: string }[] {
   const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
   const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
   const resultado = []
   const hoje = new Date()
-  for (let i = 1; i <= qtd; i++) {
+  for (let i = 0; i <= qtd; i++) {
     const d = new Date(hoje)
     d.setDate(hoje.getDate() + i)
     const valor = d.toISOString().split('T')[0]
     resultado.push({
       valor,
-      label:     `${d.getDate()} ${meses[d.getMonth()]}`,
+      label:     i === 0 ? 'Hoje' : `${d.getDate()} ${meses[d.getMonth()]}`,
       diaSemana: dias[d.getDay()],
     })
   }
   return resultado
+}
+
+function hojeISO(): string {
+  return new Date().toISOString().split('T')[0]
 }
 
 // Gera slots de 30 em 30 min das 8h às 17h30
@@ -101,14 +105,25 @@ export default function Agendar() {
   const semHorariosConfigurados = !oficina?.horarios?.length
 
   const slotsFiltrados = useMemo(() => {
-    // Sem horários cadastrados → mostra todos (fallback)
-    if (semHorariosConfigurados) return SLOTS
-    // Tem horários mas o dia está fechado
-    if (!horarioDoDia || !horarioDoDia.aberto || !horarioDoDia.abertura || !horarioDoDia.fechamento) return []
-    const ab = horarioDoDia.abertura!.split(':').map((v, i) => i === 0 ? v.padStart(2, '0') : v).join(':')
-    const fe = horarioDoDia.fechamento!.split(':').map((v, i) => i === 0 ? v.padStart(2, '0') : v).join(':')
-    return SLOTS.filter((s) => s >= ab && s <= fe)
-  }, [horarioDoDia, semHorariosConfigurados])
+    let slots = SLOTS
+
+    // Filtra por horário de funcionamento
+    if (!semHorariosConfigurados) {
+      if (!horarioDoDia || !horarioDoDia.aberto || !horarioDoDia.abertura || !horarioDoDia.fechamento) return []
+      const ab = horarioDoDia.abertura.split(':').map((v, i) => i === 0 ? v.padStart(2, '0') : v).join(':')
+      const fe = horarioDoDia.fechamento.split(':').map((v, i) => i === 0 ? v.padStart(2, '0') : v).join(':')
+      slots = slots.filter(s => s >= ab && s <= fe)
+    }
+
+    // Se hoje estiver selecionado, remove slots que já passaram
+    if (data === hojeISO()) {
+      const agora = new Date()
+      const horaAtual = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`
+      slots = slots.filter(s => s > horaAtual)
+    }
+
+    return slots
+  }, [horarioDoDia, semHorariosConfigurados, data])
 
   const servicoSelecionado = oficina?.servicos.find(s => s.id === servicoId)
   const veiculoSelecionado = veiculos.find(v => v.id === veiculoId)
