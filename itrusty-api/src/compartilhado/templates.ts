@@ -179,6 +179,196 @@ export function templateSenhaAlterada({ nome }: { nome: string }): string {
   )
 }
 
+function infoRow(label: string, valor: string): string {
+  return `<tr>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${TEXT_SECONDARY};width:40%;">${label}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:14px;font-weight:600;color:${DARK};">${valor}</td>
+  </tr>`
+}
+
+function tabelaInfo(linhas: { label: string; valor: string }[]): string {
+  return `<table cellpadding="0" cellspacing="0" role="presentation" style="width:100%;margin:20px 0;">
+    ${linhas.map(l => infoRow(l.label, l.valor)).join('')}
+  </table>`
+}
+
+export function templateNovoAgendamento({
+  nomeGestor,
+  nomeMotorista,
+  nomeServico,
+  dataFormatada,
+  horaInicio,
+}: {
+  nomeGestor:    string
+  nomeMotorista: string
+  nomeServico:   string
+  dataFormatada: string
+  horaInicio:    string
+}): string {
+  const primeiroNome = nomeGestor.split(' ')[0]
+  return base(
+    'Novo agendamento recebido — iTrusty',
+    `${primeiroNome}, você recebeu um novo pedido de agendamento.`,
+    `
+    ${titulo('Novo pedido de agendamento!')}
+    ${paragrafo(`Olá, <strong>${primeiroNome}</strong>! Você recebeu um novo pedido de agendamento pelo iTrusty.`)}
+    ${tabelaInfo([
+      { label: 'Cliente',  valor: nomeMotorista },
+      { label: 'Serviço',  valor: nomeServico },
+      { label: 'Data',     valor: dataFormatada },
+      { label: 'Horário',  valor: horaInicio },
+    ])}
+    ${paragrafo('Abra o aplicativo para aceitar ou recusar este agendamento.', TEXT_SECONDARY)}
+    `
+  )
+}
+
+export function templateAgendamentoConfirmado({
+  nomeMotorista,
+  nomeOficina,
+  nomeServico,
+  dataFormatada,
+  horaInicio,
+}: {
+  nomeMotorista: string
+  nomeOficina:   string
+  nomeServico:   string
+  dataFormatada: string
+  horaInicio:    string
+}): string {
+  const primeiroNome = nomeMotorista.split(' ')[0]
+  return base(
+    'Agendamento confirmado — iTrusty',
+    `${primeiroNome}, seu agendamento foi confirmado!`,
+    `
+    ${titulo('Agendamento confirmado ✓')}
+    ${paragrafo(`Ótima notícia, <strong>${primeiroNome}</strong>! A <strong>${nomeOficina}</strong> confirmou seu agendamento.`)}
+    ${tabelaInfo([
+      { label: 'Serviço',  valor: nomeServico },
+      { label: 'Oficina',  valor: nomeOficina },
+      { label: 'Data',     valor: dataFormatada },
+      { label: 'Horário',  valor: horaInicio },
+    ])}
+    ${aviso('Lembre-se de chegar no horário agendado. Em caso de imprevisto, cancele pelo aplicativo.', SUCCESS)}
+    ${paragrafo('Acompanhe o status pelo aplicativo iTrusty.', TEXT_SECONDARY)}
+    `
+  )
+}
+
+export function templateAgendamentoRecusado({
+  nomeMotorista,
+  nomeOficina,
+  nomeServico,
+}: {
+  nomeMotorista: string
+  nomeOficina:   string
+  nomeServico:   string
+}): string {
+  const primeiroNome = nomeMotorista.split(' ')[0]
+  return base(
+    'Agendamento não disponível — iTrusty',
+    `${primeiroNome}, sua solicitação de agendamento não pôde ser atendida.`,
+    `
+    ${titulo('Agendamento não disponível')}
+    ${paragrafo(`Olá, <strong>${primeiroNome}</strong>. Infelizmente a <strong>${nomeOficina}</strong> não pôde atender sua solicitação de <strong>${nomeServico}</strong> no horário escolhido.`)}
+    ${paragrafo('Isso pode acontecer por indisponibilidade de agenda ou algum imprevisto da oficina. Você pode tentar outro horário ou buscar outra oficina pelo aplicativo.')}
+    ${divisor()}
+    ${paragrafo('Abra o iTrusty para ver outras opções disponíveis.', TEXT_SECONDARY)}
+    `
+  )
+}
+
+export function templateServicoFinalizado({
+  nomeMotorista,
+  nomeOficina,
+  nomeServico,
+  dataFormatada,
+}: {
+  nomeMotorista: string
+  nomeOficina:   string
+  nomeServico:   string
+  dataFormatada: string
+}): string {
+  const primeiroNome = nomeMotorista.split(' ')[0]
+  return base(
+    'Serviço concluído — iTrusty',
+    `${primeiroNome}, seu serviço foi concluído com sucesso!`,
+    `
+    ${titulo('Serviço concluído! 🎉')}
+    ${paragrafo(`Olá, <strong>${primeiroNome}</strong>! A <strong>${nomeOficina}</strong> finalizou o serviço do seu veículo.`)}
+    ${tabelaInfo([
+      { label: 'Serviço',  valor: nomeServico },
+      { label: 'Oficina',  valor: nomeOficina },
+      { label: 'Data',     valor: dataFormatada },
+    ])}
+    ${paragrafo('Obrigado por usar o iTrusty! Esperamos que o serviço tenha atendido às suas expectativas.', TEXT_SECONDARY)}
+    `
+  )
+}
+
+export function templateAgendamentoSolicitado({
+  nomeMotorista,
+  nomeOficina,
+  nomeServico,
+  dataFormatada,
+  horaInicio,
+}: {
+  nomeMotorista: string
+  nomeOficina:   string
+  nomeServico:   string
+  dataFormatada: string
+  horaInicio:    string
+}): string {
+  const primeiroNome = nomeMotorista.split(' ')[0]
+  return base(
+    'Solicitação enviada — iTrusty',
+    `${primeiroNome}, sua solicitação foi enviada. Aguardando confirmação da oficina.`,
+    `
+    ${titulo('Solicitação enviada! 🔔')}
+    ${paragrafo(`Olá, <strong>${primeiroNome}</strong>! Sua solicitação de agendamento foi enviada para a <strong>${nomeOficina}</strong> e está aguardando confirmação.`)}
+    ${tabelaInfo([
+      { label: 'Serviço',  valor: nomeServico },
+      { label: 'Oficina',  valor: nomeOficina },
+      { label: 'Data',     valor: dataFormatada },
+      { label: 'Horário',  valor: horaInicio },
+    ])}
+    ${aviso('Você receberá um aviso assim que a oficina confirmar ou recusar seu pedido.', WARNING)}
+    ${paragrafo('Acompanhe o status em tempo real pelo aplicativo iTrusty.', TEXT_SECONDARY)}
+    `
+  )
+}
+
+export function templateAgendamentoCancelado({
+  nomeGestor,
+  nomeMotorista,
+  nomeServico,
+  dataFormatada,
+  horaInicio,
+}: {
+  nomeGestor:    string
+  nomeMotorista: string
+  nomeServico:   string
+  dataFormatada: string
+  horaInicio:    string
+}): string {
+  const primeiroNome = nomeGestor.split(' ')[0]
+  return base(
+    'Agendamento cancelado — iTrusty',
+    `${primeiroNome}, um agendamento foi cancelado pelo cliente.`,
+    `
+    ${titulo('Agendamento cancelado')}
+    ${paragrafo(`Olá, <strong>${primeiroNome}</strong>. O cliente <strong>${nomeMotorista}</strong> cancelou o seguinte agendamento:`)}
+    ${tabelaInfo([
+      { label: 'Cliente',  valor: nomeMotorista },
+      { label: 'Serviço',  valor: nomeServico },
+      { label: 'Data',     valor: dataFormatada },
+      { label: 'Horário',  valor: horaInicio },
+    ])}
+    ${paragrafo('O horário está disponível novamente para novos agendamentos.', TEXT_SECONDARY)}
+    `
+  )
+}
+
 export function templateEmailAlterado({
   nome,
   emailNovo,

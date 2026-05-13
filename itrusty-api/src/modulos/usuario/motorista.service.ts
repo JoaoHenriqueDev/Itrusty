@@ -3,7 +3,11 @@ import { prisma } from '../../compartilhado/prisma'
 import { OnboardingMotoristaDTO, CriarAgendamentoDTO } from './motorista.dto'
 import { criarNotificacao } from '../../compartilhado/notificacoes'
 import { enviarEmail } from '../../compartilhado/email'
-import { templateNovoAgendamento } from '../../compartilhado/templates'
+import {
+  templateNovoAgendamento,
+  templateAgendamentoSolicitado,
+  templateAgendamentoCancelado,
+} from '../../compartilhado/templates'
 
 const DIAS_SEMANA: Record<number, DiaSemana> = {
   0: 'DOM',
@@ -315,7 +319,7 @@ export async function buscarVeiculosMotorista(userId: string) {
 export async function criarAgendamento(userId: string, data: CriarAgendamentoDTO) {
   const motorista = await prisma.motorista.findUnique({
     where: { userId },
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { name: true, email: true } } },
   })
   if (!motorista) throw new Error('PERFIL_NAO_ENCONTRADO')
 
@@ -417,6 +421,18 @@ export async function criarAgendamento(userId: string, data: CriarAgendamentoDTO
     }),
   })
 
+  enviarEmail({
+    to: motorista.user.email,
+    subject: 'Solicitação de agendamento enviada — iTrusty',
+    html: templateAgendamentoSolicitado({
+      nomeMotorista: motorista.user.name,
+      nomeOficina:   oficina.nome,
+      nomeServico:   servico.nome,
+      dataFormatada,
+      horaInicio:    data.horaInicio,
+    }),
+  })
+
   return {
     ...agendamento,
     precoEstimado: Number(agendamento.precoEstimado),
@@ -424,17 +440,50 @@ export async function criarAgendamento(userId: string, data: CriarAgendamentoDTO
 }
 
 export async function cancelarAgendamento(userId: string, agendamentoId: string) {
-  const motorista = await prisma.motorista.findUnique({ where: { userId } })
+  const motorista = await prisma.motorista.findUnique({
+    where: { userId },
+    include: { user: { select: { name: true } } },
+  })
   if (!motorista) throw new Error('PERFIL_NAO_ENCONTRADO')
 
-  const resultado = await prisma.agendamento.updateMany({
+  const ag = await prisma.agendamento.findFirst({
     where: {
       id: agendamentoId,
       motoristaId: motorista.id,
       status: { in: ['AGUARDANDO', 'CONFIRMADO'] },
     },
+    include: {
+      oficina: { include: { user: { select: { email: true, name: true } } } },
+      servico: { select: { nome: true } },
+    },
+  })
+
+  if (!ag) throw new Error('AGENDAMENTO_NAO_CANCELAVEL')
+
+  await prisma.agendamento.update({
+    where: { id: agendamentoId },
     data: { status: 'CANCELADO' },
   })
 
-  if (resultado.count === 0) throw new Error('AGENDAMENTO_NAO_CANCELAVEL')
+  const dataFormatada = new Date(ag.dataServico).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long',
+  })
+
+  criarNotificacao(
+    ag.oficina.userId,
+    'Agendamento cancelado',
+    `${motorista.user.name} cancelou ${ag.servico.nome} para ${dataFormatada}.`
+  )
+
+  enviarEmail({
+    to: ag.oficina.user.email,
+    subject: 'Agendamento cancelado — iTrusty',
+    html: templateAgendamentoCancelado({
+      nomeGestor:    ag.oficina.user.name,
+      nomeMotorista: motorista.user.name,
+      nomeServico:   ag.servico.nome,
+      dataFormatada,
+      horaInicio:    ag.horaInicio,
+    }),
+  })
 }

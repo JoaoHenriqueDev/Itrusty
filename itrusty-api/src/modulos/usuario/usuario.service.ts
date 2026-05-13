@@ -1,5 +1,7 @@
 import { prisma } from '../../compartilhado/prisma'
 import { AtualizarUsuarioDTO, AdicionarVeiculoDTO } from './usuario.dto'
+import { enviarEmail } from '../../compartilhado/email'
+import { templateEmailAlterado } from '../../compartilhado/templates'
 
 export async function atualizarPushToken(userId: string, token: string) {
   await prisma.user.update({ where: { id: userId }, data: { fcmToken: token } })
@@ -15,9 +17,23 @@ export async function buscarPerfilUsuario(userId: string) {
 }
 
 export async function atualizarPerfilUsuario(userId: string, data: AtualizarUsuarioDTO) {
-  return prisma.$transaction(async (tx) => {
-    const emailNorm = data.email?.toLowerCase().trim()
+  const emailNorm = data.email?.toLowerCase().trim()
 
+  // Captura email anterior antes de alterar para enviar notificação
+  let emailAnterior: string | null = null
+  let nomeAtual = ''
+  if (emailNorm) {
+    const userAtual = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    })
+    if (userAtual && userAtual.email !== emailNorm) {
+      emailAnterior = userAtual.email
+      nomeAtual     = userAtual.name
+    }
+  }
+
+  const user = await prisma.$transaction(async (tx) => {
     if (emailNorm) {
       const existe = await tx.user.findFirst({
         where: { email: emailNorm, NOT: { id: userId } },
@@ -35,6 +51,20 @@ export async function atualizarPerfilUsuario(userId: string, data: AtualizarUsua
       select: { id: true, name: true, email: true, phone: true, role: true },
     })
   })
+
+  // Notifica o email anterior sobre a alteração (fire-and-forget)
+  if (emailAnterior && emailNorm) {
+    enviarEmail({
+      to: emailAnterior,
+      subject: 'Email da conta alterado — iTrusty',
+      html: templateEmailAlterado({
+        nome:      data.name?.trim() ?? nomeAtual,
+        emailNovo: emailNorm,
+      }),
+    })
+  }
+
+  return user
 }
 
 export async function adicionarVeiculo(userId: string, data: AdicionarVeiculoDTO) {
