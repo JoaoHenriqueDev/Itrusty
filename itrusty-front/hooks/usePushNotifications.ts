@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
-import { Platform } from 'react-native'
+import { Platform, AppState, AppStateStatus } from 'react-native'
 import { api } from '../services/api'
 import { getSecure, saveSecure } from '../utils/storage'
 import { useAuth } from '../contexts/AuthContext'
@@ -15,7 +15,7 @@ Notifications.setNotificationHandler({
   }),
 })
 
-async function registrarToken() {
+async function registrarToken(_jwtToken: string) {
   if (!Device.isDevice) return
 
   if (Platform.OS === 'android') {
@@ -41,24 +41,24 @@ async function registrarToken() {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined
   if (!projectId) return
 
-  // Não envia se não há sessão ativa
-  const jwtToken = await getSecure('token')
-  if (!jwtToken) return
-
   const { data: novoToken } = await Notifications.getExpoPushTokenAsync({ projectId })
 
-  // Só envia ao backend se o token mudou
+  // Só envia ao backend se o token mudou localmente
   const tokenSalvo = await getSecure('pushToken')
   if (novoToken === tokenSalvo) return
 
-  await api.patch('/usuario/push-token', { token: novoToken }).catch(() => {})
-  await saveSecure('pushToken', novoToken)
+  try {
+    await api.patch('/usuario/push-token', { token: novoToken })
+    // Só marca como salvo se o backend confirmou — garante reenvio em caso de falha
+    await saveSecure('pushToken', novoToken)
+  } catch {
+    // Não persiste localmente: próxima abertura do app tentará novamente
+  }
 }
 
 export function usePushNotifications(onTap?: () => void) {
   const { token: jwtToken } = useAuth()
 
-  // Ref garante que o callback sempre usa a versão mais recente (sem closure stale)
   const onTapRef = useRef(onTap)
   const notifListener    = useRef<Notifications.EventSubscription>()
   const responseListener = useRef<Notifications.EventSubscription>()
@@ -67,9 +67,18 @@ export function usePushNotifications(onTap?: () => void) {
     onTapRef.current = onTap
   }, [onTap])
 
-  // Re-registra o token sempre que o usuário faz login (jwtToken muda de null → valor)
+  // Registra ao fazer login (jwtToken muda de null → valor)
   useEffect(() => {
-    if (jwtToken) registrarToken()
+    if (jwtToken) registrarToken(jwtToken)
+  }, [jwtToken])
+
+  // Re-registra quando o app volta ao foreground — recupera token perdido no backend
+  useEffect(() => {
+    if (!jwtToken) return
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') registrarToken(jwtToken)
+    })
+    return () => sub.remove()
   }, [jwtToken])
 
   useEffect(() => {
